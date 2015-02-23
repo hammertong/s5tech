@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<message msgId="12" msgCommand="EslKill"
+		xsi:schemaLocation="http://s5tech.com/network schema.xsd" 
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+		xmlns="http://s5tech.com/network">
+	<eslList>
+		<!-- <mac>00124B000164B142</mac> -->		
+		<mac>00124B000162C701</mac>		
+	</eslList>	
+</message>

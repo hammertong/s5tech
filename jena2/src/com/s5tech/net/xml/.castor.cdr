@@ -1,0 +1,25 @@
+#Tue Sep 16 10:03:06 CEST 2014
+com.s5tech.net.xml.AckMessage=com.s5tech.net.xml.descriptors.AckMessageDescriptor
+com.s5tech.net.xml.CoordinatorEvent=com.s5tech.net.xml.descriptors.CoordinatorEventDescriptor
+com.s5tech.net.xml.DeviceInRange=com.s5tech.net.xml.descriptors.DeviceInRangeDescriptor
+com.s5tech.net.xml.EslPriceData=com.s5tech.net.xml.descriptors.EslPriceDataDescriptor
+com.s5tech.net.xml.CoordinatorsInRange=com.s5tech.net.xml.descriptors.CoordinatorsInRangeDescriptor
+com.s5tech.net.xml.EslStatistics=com.s5tech.net.xml.descriptors.EslStatisticsDescriptor
+com.s5tech.net.xml.TimeInformation=com.s5tech.net.xml.descriptors.TimeInformationDescriptor
+com.s5tech.net.xml.EslEvent=com.s5tech.net.xml.descriptors.EslEventDescriptor
+com.s5tech.net.xml.EslList=com.s5tech.net.xml.descriptors.EslListDescriptor
+com.s5tech.net.xml.EslStatusRequestInfo=com.s5tech.net.xml.descriptors.EslStatusRequestInfoDescriptor
+com.s5tech.net.xml.EslItem=com.s5tech.net.xml.descriptors.EslItemDescriptor
+com.s5tech.net.xml.EslInstallationInfo=com.s5tech.net.xml.descriptors.EslInstallationInfoDescriptor
+com.s5tech.net.xml.CoordinaotrEventItem=com.s5tech.net.xml.descriptors.CoordinaotrEventItemDescriptor
+com.s5tech.net.xml.Message=com.s5tech.net.xml.descriptors.MessageDescriptor
+com.s5tech.net.xml.Firmware=com.s5tech.net.xml.descriptors.FirmwareDescriptor
+com.s5tech.net.xml.EslStatusRequest=com.s5tech.net.xml.descriptors.EslStatusRequestDescriptor
+com.s5tech.net.xml.EslEventItem=com.s5tech.net.xml.descriptors.EslEventItemDescriptor
+com.s5tech.net.xml.EslChannelToJoin=com.s5tech.net.xml.descriptors.EslChannelToJoinDescriptor
+com.s5tech.net.xml.Coordinator=com.s5tech.net.xml.descriptors.CoordinatorDescriptor
+com.s5tech.net.xml.EslChannelToJoinInfo=com.s5tech.net.xml.descriptors.EslChannelToJoinInfoDescriptor
+com.s5tech.net.xml.HubEvent=com.s5tech.net.xml.descriptors.HubEventDescriptor
+com.s5tech.net.xml.HubEventItem=com.s5tech.net.xml.descriptors.HubEventItemDescriptor
+com.s5tech.net.xml.TimeInfo=com.s5tech.net.xml.descriptors.TimeInfoDescriptor
+com.s5tech.net.xml.EslStatus=com.s5tech.net.xml.descriptors.EslStatusDescriptor

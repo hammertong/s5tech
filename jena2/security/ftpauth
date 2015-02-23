@@ -1,0 +1,24 @@
+#
+# NOTE: 
+# command line to generate hashcode password:
+# run.cmd convert MD5 <passwprd>
+#
+ftpserver.user.s5techftp.userpassword=5FCEC6612CE5ACDD6A8A04B58385AE57
+ftpserver.user.s5techftp.homedirectory=./run/data/s5techftp
+ftpserver.user.s5techftp.enableflag=true
+ftpserver.user.s5techftp.writepermission=true
+ftpserver.user.s5techftp.maxloginnumber=0
+ftpserver.user.s5techftp.maxloginperip=0
+ftpserver.user.s5techftp.idletime=0
+ftpserver.user.s5techftp.uploadrate=0
+ftpserver.user.s5techftp.downloadrate=0
+
+#ftpserver.user.anonymous.userpassword=
+#ftpserver.user.anonymous.homedirectory=./run/data/ftp
+#ftpserver.user.anonymous.enableflag=true
+#ftpserver.user.anonymous.writepermission=false
+#ftpserver.user.anonymous.maxloginnumber=20
+#ftpserver.user.anonymous.maxloginperip=2
+#ftpserver.user.anonymous.idletime=300
+#ftpserver.user.anonymous.uploadrate=4800
+#ftpserver.user.anonymous.downloadrate=4800

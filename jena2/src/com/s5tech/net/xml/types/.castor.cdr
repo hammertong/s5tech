@@ -1,0 +1,8 @@
+#Tue Sep 16 10:03:06 CEST 2014
+com.s5tech.net.xml.types.PowerStatus=com.s5tech.net.xml.types.descriptors.PowerStatusDescriptor
+com.s5tech.net.xml.types.HubEventType=com.s5tech.net.xml.types.descriptors.HubEventTypeDescriptor
+com.s5tech.net.xml.types.CoordinatorEventType=com.s5tech.net.xml.types.descriptors.CoordinatorEventTypeDescriptor
+com.s5tech.net.xml.types.CommandResult=com.s5tech.net.xml.types.descriptors.CommandResultDescriptor
+com.s5tech.net.xml.types.EslEventType=com.s5tech.net.xml.types.descriptors.EslEventTypeDescriptor
+com.s5tech.net.xml.types.StateType=com.s5tech.net.xml.types.descriptors.StateTypeDescriptor
+com.s5tech.net.xml.types.MessageCommand=com.s5tech.net.xml.types.descriptors.MessageCommandDescriptor

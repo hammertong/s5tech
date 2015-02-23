@@ -1,0 +1,238 @@
+<html version="-//W3C//DTD HTML 4.01 Transitional//EN">
+<title>ESL Network Web Console</title>
+<head>
+<link rel="shortcut icon" href="images/s5.ico">
+<link type="text/css" rel="stylesheet" href="css/default.css"/>
+<script type="text/javascript">
+
+var htmlbak = '';
+
+var explorerVersion = -1; //means no iexplorer set
+if (navigator.appName == 'Microsoft Internet Explorer') {
+	var ua = navigator.userAgent;
+	var re = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})");
+	if (re.exec(ua) != null)
+		explorerVersion = parseFloat(RegExp.$1);
+}
+
+function on_load()
+{
+	loadVer();
+	htmlbak = document.getElementById('navmenu').children[0].innerHTML;
+	document.getElementById('homeclick').click();
+}
+
+function loadVer() {	
+	try {
+		if (window.XMLHttpRequest) {
+		  xhttp=new XMLHttpRequest();
+		}
+		else {
+		  xhttp=new ActiveXObject("Microsoft.XMLHTTP");
+		}	
+		xhttp.open("GET", '../network/version', false);
+		xhttp.setRequestHeader('Content-type','text/json');
+		xhttp.send("");	
+		var o = eval('( ' + xhttp.responseText + ' )');
+		var v = o.version.result;	
+		if (v.indexOf('null') >= 0) v = "versione N/P";
+		
+		var s = "";
+		while (s != v)
+		{
+			s = v;
+			v = s.replace("_", " ");
+		}
+		
+		var _k = v.indexOf('Release');
+		if (_k > 0) {
+			v = v.substr(0, _k) + v.substr(_k + 8);
+		}
+		
+		document.getElementById("version").innerHTML = v;
+	}
+	catch (e) {
+		document.getElementById("version").innerHTML = "version error";
+	}	
+}
+
+function showpages()
+{
+	document.getElementById('mypage').style.display = 'block';
+	document.getElementById('helperpage').style.display = 'block';
+}
+
+function navigate(url, el, help_url)
+{
+	var i;
+	var cll;
+	document.getElementById('mypage').style.display = 'none';
+	document.getElementById('helperpage').style.display = 'none';
+	
+	if (explorerVersion == -1)
+	{
+		var t = el.innerHTML;
+		var n = document.getElementById('navmenu').children[0];
+		n.innerHTML = htmlbak;
+		for (i = 0; i < n.children.length; i ++)
+		{
+			cll = n.children[i].children[0];
+			if (cll.innerHTML == t) {
+				cll.style.background = '#1b91c1';
+				cll.style.color = '#ffffff';
+				break;
+			}
+		}
+	}
+		
+	document.getElementById('mypage').src = url;	
+	if (help_url != null) document.getElementById('helperpage').src = help_url;
+	else document.getElementById('helperpage').src = 'help/nohelp.html';
+	
+	setTimeout('showpages()', 150);
+	
+}
+
+</script>
+
+</head>
+<body onload="on_load()">
+<h3>Esl Network Application Web Console - S5Tech 2015 &#169;</h3>
+
+<table cellspacing="5" cellpadding="0" id="navmenu" style="cursor: default; border: 0px; width: 100%; font-family: Arial, Helvetica; font-size: 12px;">
+	
+	<tr>
+		<td class="navb" id="homeclick"
+			onmouseover="this.className='navbHover';" 
+			onmouseout="this.className='navb';"
+			onclick="navigate('system.html', this, null)">
+			Sistema
+		</td>
+		<td rowspan="14" valign="top"  style="padding-top: 0px; border: 0px;">
+			<iframe id="mypage" frameborder="0" src="#"
+				style="display: none; background: #e0e0e0; border-style: none; width: 100%; height: 1500px;"></iframe>
+				&nbsp;
+		</td>
+		<td rowspan="14" valign="top" style="padding-top: 0px; border: 1px; width: 120px;">			
+			<iframe id="helperpage" frameborder="0" src="#"
+				style="display: none; background: #e0e0e0; border-style: none; width: 100%; height: 1500px;"></iframe>
+				&nbsp;
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="navb" style="width: 120px;"
+			onmouseover="this.className='navbHover';" 
+			onmouseout="this.className='navb';"
+			onclick="navigate('hubs.html', this, null)">
+			Hubs (T2/T3)
+		</td>		
+	</tr>
+	
+	<tr>
+		<td class="navb" style="width: 120px;"
+			onmouseover="this.className='navbHover';" 
+			onmouseout="this.className='navb';"
+			onclick="navigate('coordinators.html', this, null)">
+			Stato accentratori
+		</td>		
+	</tr>
+	
+	<tr>
+		<td class="navb" style="width: 120px;"
+			onmouseover="this.className='navbHover';" 
+			onmouseout="this.className='navb';"
+			onclick="navigate('queues.html', this, null)">
+			Code accentratori
+		</td>		
+	</tr>
+	
+	<tr>
+		<td class="navb" 
+			onmouseover="this.className='navbHover';" 
+			onmouseout="this.className='navb';"
+			onclick="navigate('channels.html', this, null)">
+			Comandi accentratori
+		</td>
+	</tr>
+		
+	<tr>
+		<td class="navb" 
+			onmouseover="this.className='navbHover';" 
+			onmouseout="this.className='navb';"
+			onclick="navigate('esls.html', this, null)">
+			Registro ESLs
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="navb" 
+			onmouseover="this.className='navbHover';" 
+			onmouseout="this.className='navb';"
+			onclick="navigate('commands.html', this, null)">
+			Comandi ESLs
+		</td>
+	</tr>
+			
+	<tr>
+		<td class="navb" 
+			onmouseover="this.className='navbHover';" 
+			onmouseout="this.className='navb';"
+			onclick="navigate('tasks.html', this, null)">
+			Diagnostica processi
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="navb" 
+			onmouseover="this.className='navbHover';" 
+			onmouseout="this.className='navb';"
+			onclick="navigate('config.html', this, null)">
+			Configurazione
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="navb" 
+			onmouseover="this.className='navbHover';" 
+			onmouseout="this.className='navb';"
+			onclick="navigate('upgrading.html', this, null)">
+			Aggiornamento Firmware
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="navb" 
+			onmouseover="this.className='navbHover';" 
+			onmouseout="this.className='navb';"
+			onclick="navigate('charts.html', this, null)">
+			Grafici
+		</td>
+	</tr>
+	
+	<tr>
+		<td valign="top" style="width: 120px; height: 40px;">
+			<hr style="color: #1b91c1;">
+			<b style="font-size: 12px; color: #1b91c1;" id="version"></b>
+		</td>						
+	</tr>
+	
+	<tr>
+		<td valign="top" style="width: 120px; height: 40px;">	
+			<img src="images/s5.gif">
+		</td>
+	</tr>
+	
+	<tr>
+		<td style="width: 120px; height:1000px;">
+		&nbsp;
+		</td>
+	</tr>
+	
+</table>
+
+<table cellspacing="5" style="border: 0px;">
+</table>
+
+</body>
+</html>

@@ -1,0 +1,647 @@
+﻿<html>
+<head>
+
+<link type="text/css" rel="stylesheet" href="css/default.css"/>
+<script type="text/javascript" src="js/downstream.js"></script>
+<script type="text/javascript">
+
+function on_load()
+{
+	document.getElementById('cmbBuffer').selectedIndex = 6;
+	document.getElementById('nmActivation').value = formatDate(new Date());
+	var s = formatDate(new Date());
+	//document.getElementById('unauthfrom').value = s.substr(0,11) + '00:00:00';
+}
+ 
+function sendStatusRequestGUI (tgt)
+{
+	try {
+		var maxbuf = parseInt(document.getElementById('cmbBuffer').value);
+		var secsToWait = parseInt(document.getElementById('srWait').value);
+		
+		if (isNaN(secsToWait)) {
+			alert('attesa status request specificata non valida, richiesta ignorata');
+			return;
+		}
+		
+		if (secsToWait > 180) secsToWait = 180;
+		else if (secsToWait < 0) secsToWait = 0;
+		
+		sendGlobalStatusRequest (maxbuf, secsToWait);
+		
+		tgt.value = 'comando inviato';
+		tgt.disabled = true;
+		
+	}
+	catch (e) {
+		alert('richiesta fallita! errore: ' + e);
+	}
+}
+
+function sendNightModeGUI(tgt)
+{
+	try {
+		var durationSecs = parseInt(document.getElementById('nmDuration').value);
+		var activationTime = document.getElementById('nmActivation').value;
+		
+		if (isNaN(durationSecs)) {
+			alert('durata night mode specificata non valida, richiesta ignorata');
+			return;
+		}
+		
+		if (durationSecs > 7200) durationSecs = 7200;
+		
+		else if (durationSecs < 0) {
+			alert('durata night mode specificata non valida, richiesta ignorata');
+			return;
+		}
+		
+		if (confirm('Attivare night mode su tutte le Esls per ' + durationSecs + ' secondi a partire da ' + activationTime + ' ?')) {
+			sendNightMode(durationSecs, activationTime);
+			tgt.value = 'comando inviato';
+			tgt.disabled = true;
+		}		
+		
+	}
+	catch (e) {
+		alert('richiesta fallita! errore: ' + e);
+	}
+}
+
+function sendActiveServicePageGUI(tgt)
+{
+	try {
+		var durationSecs = parseInt(document.getElementById('asDuration').value);
+	
+		if (isNaN(durationSecs)) {
+			alert('durata pagina di servizion specificata non valida, richiesta ignorata');
+			return;
+		}
+		
+		if (durationSecs > 7200) durationSecs = 7200;
+		
+		else if (durationSecs < 0) {
+			alert('durata pagina di servizio specificata non valida, richiesta ignorata');
+			return;
+		}
+		
+		if (confirm('Attivare pagina di sevizio su tutte le Esls per ' + durationSecs + ' secondi?')) {
+			sendActiveServicePage(durationSecs);
+			tgt.value = 'comando inviato';
+			tgt.disabled = true;
+		}
+		
+	}
+	catch (e) {
+		alert('richiesta fallita! errore: ' + e);
+	}
+		
+}
+
+
+
+function sendMessage()
+{
+	var xhttp;
+	var result = '';
+	var data = document.getElementById('xmlmessage').value;
+	
+	if (data.length == 0) {
+		alert('corpo messaggio mancante');
+		return;			
+	}
+	
+	if (data.indexOf('<?xml ') < 0) {
+		alert('corpo messaggio non contiene un header xml');
+		return;			
+	}
+	
+	try {
+
+		if (window.XMLHttpRequest)
+		{
+		  xhttp=new XMLHttpRequest();
+		}
+		else
+		{
+		  xhttp=new ActiveXObject("Microsoft.XMLHTTP");
+		}
+		xhttp.open("POST",'../publish',false);
+		xhttp.send(data);
+		
+		result = 'accettato';
+		
+	}
+	catch (e) {
+		result = 'errore: ' + e;
+	}
+	
+	var html = '<br><br>messaggio inviato:';
+	html += formatDate(new Date());
+	html += '<br>risultato: ';
+	html += result;
+	document.getElementById('sendbuttonmessage').innerHTML = html;
+		
+}
+
+function checkfile (inputfield) 
+{
+	var ok = false;
+	
+	if (inputfield.value.indexOf(".") > 0) 
+	{
+		if (inputfield.value.length > 4)
+		var ext = inputfield.value.substr(inputfield.value.length - 4);
+		switch(ext)
+		{
+			case '.xml':
+			case '.Xml':
+			case '.XML':
+				ok = true;
+				break;
+			default:
+		}
+	}
+	
+	if (!ok) {
+		alert('Estensione file non consentita. Seleziona solo .xml files!');
+		document.getElementById('submitUpload').disabled = true;
+		inputfield.value = '';
+	}
+	else {
+		document.getElementById('submitUpload').disabled = false;
+	}
+	
+}
+
+//
+// sql editor
+//
+
+function createHtmlTableFromCsv (txt)
+{
+	var lines = txt.split('\n');
+	var fields = lines[0].split(';');
+	var count = 0;
+	var rowcount = 0;
+	var html = '<table cellpadding="0" cellspacing="0" class="dbtable">';
+	html += '<tr>';
+	html += '<td class="dbhead">NR</td>';
+	for (var i = 0; i < fields.length; i ++) {
+		if (fields[i].length == 0) break;
+		count ++;
+		html += '<td class="dbhead">';	
+		html += fields[i];
+		html += '</td>';	
+	}
+	html += '</tr>';
+	for (var i = 1; i < lines.length; i ++) {
+		if (lines[i].length == 0) continue;
+		var fieldclass = (i % 2 == 0 ? 'dbeven' : 'dbodd');
+		html += '<tr>';
+		html += '<td class="dbnr">';
+		html += i;	
+		html += '</td>';
+		fields = lines[i].split(';')
+		for (var j = 0; j < count; j ++) {
+			html += '<td class="' + fieldclass + '">';
+			html += fields[j];	
+			html += '</td>';
+		}
+		html += '</tr>';
+	}
+	html += '</table>';
+	return html;
+}
+
+function runSql(url, sql, target)
+{
+	sql = sql.trim();
+
+	if ((sql.indexOf('select') == 0 || sql.indexOf('SELECT') == 0)
+			&& url.indexOf("sqlcommand") >= 0) {
+		alert('SQL command execution blocked: statement seems to be a query\r' 
+			+ 'Command statement cannot begin with "select" or "SELECT" keywords');
+		return;
+	}
+	
+	if (sql.indexOf('select') < 0 && sql.indexOf('SELECT') < 0
+			&& url.indexOf("sqlquery") >= 0) {
+		alert('SQL query execution blocked: statement is not a query?\r' 
+			+ 'Query statement must begin with "select" or "SELECT" keywords');
+		return;
+	}
+	
+	if (window.XMLHttpRequest)
+	{
+	  xhttp = new XMLHttpRequest();
+	}
+	else
+	{
+	  xhttp = new ActiveXObject("Microsoft.XMLHTTP");
+	}
+	
+	try {
+
+		xhttp.open("GET", url + "/" + sql, false);
+		xhttp.setRequestHeader('Content-type','text/plain');
+		xhttp.send("");
+
+		if (xhttp.status != 200) {
+			throw new Exception('query error');
+		}	
+		
+		if (xhttp.responseText.length == 0) {
+			target.innerHTML = '<b style="color: darkBlue;">no records found</b>'
+		}
+		else {
+			if (url.indexOf("sqlquery") >= 0) {
+				target.innerHTML = createHtmlTableFromCsv (xhttp.responseText);
+			}
+			else {
+				target.innerHTML = "<b style='color: darkGreen'>" + xhttp.responseText + " rows affected</b>";
+			}
+		}
+	}
+	catch (e) {
+	
+		target.innerHTML = '<b style="color: red;"">SQL query or command error</b>';
+		
+	}	
+}
+
+//
+// hide/show advanced commands
+//
+
+function dopress()
+{
+	var o = document.getElementById('sqlcmd');
+	if (event.keyCode == 121) { //F10
+		o.style.display = (o.style.display == 'none' ? 'block' : 'none');
+	}
+}
+
+
+function loadJSon(url)
+{
+	try {
+		if (window.XMLHttpRequest)
+		{
+		  xhttp=new XMLHttpRequest();
+		}
+		else
+		{
+		  xhttp=new ActiveXObject("Microsoft.XMLHTTP");
+		}
+		xhttp.open("GET",url,false);
+		xhttp.setRequestHeader('Content-type','text/json');
+		xhttp.send("");
+		return eval('( ' + xhttp.responseText + ' )');
+	}
+	catch (e) {
+		return null;
+	}	
+}
+
+function populateTpl(command, opt)
+{
+	var msgid = 1234;
+	var mac = "0000000000000001";
+	var eslShortAddress = 1;
+	var eslType = "6";
+	var filter = (opt ? "where eslType = '" + opt + "'" : '');
+	
+	if (command == null) return;
+	
+	var rmax = loadJSon(
+			'../sqlquery/select top 1 esl, eslType, eslShortAddress from esls ' 
+			+ filter
+			+ ' order by 3 desc');
+	
+	var rfound = false;
+	
+	if (rmax && rmax.result && rmax.result[0] && rmax.result[0].esl) {
+		mac = rmax.result[0].esl;
+		eslShortAddress = rmax.result[0].eslShortAddress;
+		eslType = rmax.result[0].eslType;
+		rfound = true;
+	}
+
+	var xml = "<?xml version='1.0' encoding='UTF-8'?>";	
+	xml += '\n<message'	
+	xml += ' xsi:schemaLocation="http://s5tech.com/network schema.xsd"';
+	xml += '\n    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"';
+	xml += '\n    xmlns="http://s5tech.com/network"';
+	xml += '\n    msgId="' + msgid + '" ';
+	xml += '\n    msgCommand="';
+	
+	var xmllist = '';
+	var xmldata = '';
+	
+	switch(command) {
+		case 'AddEslList':			
+			var news = parseInt(eslShortAddress);
+			news ++;
+			xmllist += '\n    <esl mac="' + mac + '"';
+			xmllist += '\n         type="' + eslType + '"';
+			xmllist += '\n         eslShortAddress="' + news + '"';
+			xmllist += '\n         installationKey="WFhYWFlZWVk=" />';
+			break;		
+		case 'EslPriceUpdate':				
+			xmllist += '\n    <mac>' + mac + '</mac>';
+			if (opt && opt == 'ESL70') {
+				xmldata += '\n    <eslPriceData';
+				xmldata += '\n         activationTime="2012-02-05T22:37:08.023"';
+				xmldata += '\n         hashCode="3967037656">';
+				xmldata += '\n       AQYy1ggUOFBkAAAAPw0DAFiIiIjf///wMMgAAAA/DQMAWIiIiN////AgLAEAAD8N';
+				xmldata += '\n       AwBYiIiI3///8A==';
+				xmldata += '\n    </eslPriceData>';
+			}
+			else if (opt && opt == 'ESL50') {
+				xmldata += '\n    <eslPriceData';
+				xmldata += '\n         activationTime="2012-02-05T21:47:59.925"';
+				xmldata += '\n         hashCode="880440036">';
+				xmldata += '\n       AQUy1ggUEADISQAAPw0DAFiIiIjf/v/w';
+				xmldata += '\n    </eslPriceData>';
+			}
+			else if (opt && opt == 'EG020AS012') {			
+				xmldata += '\n    <eslPriceData';
+				xmldata += '\n         activationTime="2000-01-01T00:00:00"';
+				xmldata += '\n         hashCode="1">';
+				xmldata += '\n       AgQAAAAAAQAAAABeA4lQTkcNChoKAAAADUlIRFIAAADIAAAAYAEAAAAAYtmvXgAA';
+				xmldata += '\n       AAZQTFRFAAAA////pdmf3QAAAxNJREFUSEuV079rE2EYB/D3uJLDoT1w6lBzHTI4';
+				xmldata += '\n       OBQ72MLZF8HBQIdOzhEEBwXr5EGDCXTooqY0i9jA/QtdShdrry0Yj1ICIhUs2JOW';
+				xmldata += '\n       ZjNnI+QNud7jc7nkfiTviX04AsmHe97v+7xvCCQViX1jJFKnFMClpkuHZFcFUBVT';
+				xmldata += '\n       VQCacTFVaKu6qerDQqHt6KbjryMZodRufVpQmTmnHbydBqZYEcmsXVMvsvT2vUwZ';
+				xmldata += '\n       GI3JRdaTtWwG1ynEZK8rq9kUdotGMDNrWRWfskmxmx2RXU+uew+u0440I6eZvfm5';
+				xmldata += '\n       GRMfzNYBI5T4GKGYILFuMekkvoOncuVusf1UAd5UjnZ6wnKhHANsPn3Yl+jc/i1L';
+				xmldata += '\n       X/oSPZ/j2WpEZCOU70dbm0tBAhIplDdLX7nybWs7WcJsA90SpDpb3a5wEwC0IChP';
+				xmldata += '\n       BEYEWwJPanERXSIyXyLlCf4oOVyRgciuzJVSUU7LhCOKlCRpqZiWuZLqisYR0hWH';
+				xmldata += '\n       JzKK4nKFoPBSE8UThScUJSUXOTKHgjE4kk8UliRCooi2l4AnkoWS5opB5LSCI7WE';
+				xmldata += '\n       ZtEQI4I7wVPQeQIlPFOcW/2yYdWaEVGghPcgQUQm4imcj1bg83RcBFuwOYI76n6i';
+				xmldata += '\n       NJT/FikQcUBSvtQv7VwsGyFjiTLiiyWUH8dmEBRAxQG4mlg5RZPp1aRefj0xkK1X';
+				xmldata += '\n       7MbqE5GbLVlg+VSitb6AUqvqoBeHpA30pH4CO4YnOJ2zkf1ACnrrBxSMKW+d56tn';
+				xmldata += '\n       I/1sbUNTW676wpgbEldTX6JYBZTzZ3JF6mdrQ09y2oCwgi/GIt4dNpZ3/vSzMUlL';
+				xmldata += '\n       4zpLRv7QIOePlrXgcmO2k9ZHtWCMHt4fFFqrf1BpcXR93jufcRYkcOSV5YlxWTh8';
+				xmldata += '\n       /y4u/bkJ6+sbeA8quYP9QAxfOlOTg7Lov9SZMnBuJcJCIWTcE3Fjw7vxZ2I4naad';
+				xmldata += '\n       p79miPjzJopz2qGhsFe0gaPZezAkjkvrNt7TBZSybgfdnKbqShIK4UhDEi2UScxW';
+				xmldata += '\n       YTO1uPibiovRvAuS4IslLGt39kO5TJQ2rPQEooXyu8qVgf9PgvwFWqxJOgwFgpgA';
+				xmldata += '\n       AAAASUVORK5CYII=';
+				xmldata += '\n    </eslPriceData>';
+			}
+			else {
+				//deaulting full LCD for ESL70
+				xmldata += '\n    <eslPriceData';
+				xmldata += '\n         activationTime="2012-02-05T21:47:59.925"';
+				xmldata += '\n         hashCode="3837697039">';
+				xmldata += '\n        AQYy1ggUEADY4QIAPw0DAFiIiIjf///w';
+				xmldata += '\n    </eslPriceData>';
+			}
+			break;
+		case 'EslKill':
+		case 'EslLeave':
+		case 'RemoveEslList':
+		case 'EslStatisticsRequest':
+			xmllist += '\n    <mac>' + mac + '</mac>';
+			break;		
+		case 'EslStatusRequest':			
+			xml += command + '">';
+			xml += '\n  <eslList all="true"/>';
+			xml += '\n  <!--';
+			xml += '\n  <eslList>';
+			xml += '\n    <mac>' + mac + '</mac>';
+			xml += '\n  </eslList>';			
+			xml += '\n  -->';			
+			xml += '\n  <eslStatusRequest maxBuf="7" secsToWait="0" />';			
+			xml += '\n</message>\n';
+			document.getElementById('xmlmessage').innerHTML = xml;
+			return;			
+	}
+	
+	xml += command + '">';			
+	xml += '\n  <eslList>';
+	xml += xmllist;
+	xml += '\n  </eslList>';
+	xml += xmldata;
+	xml += '\n</message>\n';
+
+	document.getElementById('xmlmessage').innerHTML = xml;
+	
+}
+
+
+</script>
+</head>
+
+<body style="margin-top: 0px;" onload="on_load()" onkeydown="dopress()">
+
+	<table id="displaywait" style="display: none;">
+		<tr>
+		<td><span id="waitmessage">...</span></td>
+		<td><img id="waitimage" src="images/wait.gif" width="70px" border="0"></img></td>
+		</tr>
+	</table>
+
+	<div id="displaydata">
+	
+	<table cellspacing="0" cellpadding="5" class="formtable" style="width: 700px; background: #ffffff;">
+	
+		<tr style="height: 30px;">
+			<td colspan="4" align="center" class="formtableHeader">Comandi di diagnostica</td>
+		</tr>
+		
+		<tr style="height: 30px">
+			<td valign="middle" align="left">
+				<b>Richiesta di status globale</b>
+			</td>
+			<td valign="middle" align="right">
+				<span>slot utilizzabili:</span>
+				<select id="cmbBuffer" class="formfield" style="width: 50px; text-align: right;">
+					<option value="1">1</option>
+					<option value="2">2</option>
+					<option value="3">3</option>
+					<option value="4">4</option>
+					<option value="5">5</option>
+					<option value="6">6</option>
+					<option value="7">7</option>
+					<option value="8">8</option>
+					<option value="9">9</option>
+					<option value="10">10</option>
+					<option value="11">11</option>
+					<option value="12">12</option>
+					<option value="13">13</option>
+					<option value="14">14</option>
+					<option value="15">15</option>
+				</select>
+			</td>
+			<td align="right" valign="middle">
+				<span>attesa(s):</span>
+				<input class="formfield" type="text" id="srWait" value="0" style="text-align: right; width: 50px">
+			</td>
+			<td align="right" valign="middle">
+				<input type="button" onclick="sendStatusRequestGUI(this);" value="invia status request" style="width: 150px;"></input>
+			</td>
+		</tr>
+			
+		<tr style="height: 30px;">
+			<td valign="middle" align="left">
+				<b>Manda etichette in night mode</b>
+			</td>
+			<td valign="middle" align="right">
+				<span>da:</span>
+				<input style="text-align: right; width: 160px;" type="text" id="nmActivation" value=""></input>
+			</td>
+			<td align="right" valign="middle">
+				<span>durata(s):</span>
+				<input style="text-align: right; width: 50px;" type="text" id="nmDuration" value="300"></input>
+			</td>
+			<td align="right" valign="middle">
+				<input type="button" onclick="sendNightModeGUI(this);" value="attiva nightmode" style="width: 150px;"></input>
+			</td>
+		</tr>
+		
+		<tr style="height: 30px;">
+			<td valign="middle" align="left">
+				<b>Attiva ora pagina di servizio</b>
+			</td>			
+			<td align="right" valign="middle">
+				&nbsp;
+			</td>
+			<td valign="middle" align="right">
+				<span>durata(s):</span>
+				<input style="text-align: right; width: 50px;" type="text" id="asDuration" value="300">
+			</td>
+			<td align="right" valign="middle">
+				<input type="button" onclick="sendActiveServicePageGUI(this);" value="attiva pagina di servizio" style="width: 150px;"></input>
+			</td>
+		</tr>
+		
+		<tr style="height: 30px;">
+			<td valign="middle" align="left" colspan="4">
+				<b onclick="document.location.href = '../logger/unauth'" style="cursor: pointer; font-weigth: bolder;">Scarica lista ESL non autorizzate</b>
+			</td>						
+		</tr>
+
+		<tr style="height: 30px;">
+			<td colspan="4">&nbsp;</td>
+		</tr>
+
+	</table>
+	
+	<br>
+	
+	<form action="../upload../publish?destinationPage=commands.html" enctype="multipart/form-data" method="POST">
+	
+		<table cellspacing="0" cellpadding="5" class="formtable" style="width: 700px; background: #ffffff;">
+
+			<tr style="height: 30px;">
+				<td colspan="2" align="center" class="formtableHeader">Invia messaggio XML tramite upload di file</td>
+			</tr>
+			
+			<tr style="height: 30px;">
+				<td colspan="2">&nbsp;</td>
+			</tr>
+			
+			<tr>
+				<td align="left">
+					<input type="file" class="formfield" name="message" onchange="checkfile(this)">
+				</td>
+				<td align="right">
+					<input type="button" disabled="disabled" value="carica file" style="width: 150px;" id="submitUpload" 
+						onclick="if (confirm('Caricare il file selezionato sul network controller?')) document.forms[0].submit();">
+				</td>
+			</tr>
+			
+			<tr style="height: 30px;">
+				<td colspan="2">&nbsp;</td>
+			</tr>
+
+		</table>
+
+	</form>
+
+	<br>
+
+	<table cellspacing="0" cellpadding="5" class="formtable" style="width: 700px; background: #ffffff;">
+
+		<tr style="height: 30px;">
+			<td colspan="2" align="center" class="formtableHeader">Invia messaggio XML</td>
+		</tr>
+		
+		<tr>
+			<td align="left" valign="top" id="lastsent1">
+				Corpo del messaggio:				
+				<br>
+				<br>
+				<br>
+				<i>Usa i seguenti template:</i>
+				<ol>
+					<li><a style="color: #A0A0A0" href="javascript:populateTpl('AddEslList')">ADD</a></li>
+					<li><a style="color: #A0A0A0" href="javascript:populateTpl('EslPriceUpdate', 'ESL70')">PRICEUPDATE ESL70</a></li>
+					<li><a style="color: #A0A0A0" href="javascript:populateTpl('EslPriceUpdate', 'ESL50')">PRICEUPDATE ESL50</a></li>
+					<li><a style="color: #A0A0A0" href="javascript:populateTpl('EslPriceUpdate', 'EG020AS012')">PRICEUPDATE EPAPER</a></li>					
+					<li><a style="color: #A0A0A0" href="javascript:populateTpl('EslStatisticsRequest')">STATISTICS</a></li>
+					<li><a style="color: #A0A0A0" href="javascript:populateTpl('EslStatusRequest')">STATUS</a></li>
+					<li><a style="color: #A0A0A0" href="javascript:populateTpl('RemoveEslList')">REMOVE</a></li>
+					<li><a style="color: #A0A0A0" href="javascript:populateTpl('EslLeave')">LEAVE</a></li>
+					<li><a style="color: #A0A0A0" href="javascript:populateTpl('EslKill')">KILL</a></li>
+				</ol>
+			</td>
+			<td align="right" valign="top">
+				<div style="overflow: scroll; width: 450px; height: 200px;" >
+					<textarea id="xmlmessage" rows="100" cols="80" 
+						style="font-size: 10px; background-color: #ffffff;; font-family: Lucida Console, Courier, Serif, Arial;"></textarea>
+				</div>
+			</td>
+		</tr>
+		
+		<tr style="height: 30px;">
+			<td colspan="2" align="right">
+				<input type="button" value="invia messaggio" onclick="sendMessage()" style="width: 150px;"></input>
+				<div style="color: #A0A0A0; font-size: 10px;" id="sendbuttonmessage"></div>
+			</td>
+		</tr>
+		
+		<tr style="height: 30px;">
+			<td colspan="2">&nbsp;</td>
+		</tr>
+
+	</table>
+	
+	<br>
+	
+	<table id="sqlcmd" cellspacing="0" cellpadding="5" class="formtable" style="display: none; width: 700px; background: #ffffff; overflow: scroll;">
+
+		<tr style="height: 30px;">
+			<td colspan="2" align="center" class="formtableHeader">SQL Editor</td>
+		</tr>
+		
+		<tr>
+			<td valign="top" style="font-size: 12px; font-weignt: bolder; color: #808080;">
+				SQL Query &amp; Command Editor
+			</td>
+			<td valign="top" align="right">
+				<input type="button" style="width: 150px; font-weight: normal;" value="Execute SQL Query" 
+					onclick="javascript:runSql('../sqlquery', document.getElementById('textsql').value, document.getElementById('response'))">
+				<input type="button" style="width: 150px; font-weight: normal;" value="Execute SQL Command" 
+					onclick="javascript:runSql('/sqlcommand', document.getElementById('textsql').value, document.getElementById('response'))">
+			</td>
+		</tr>
+		<tr>
+			<td valign="top" colspan="2">
+				<textarea id="textsql" noresize="true" style="background: white; color: darkBlue; font-family: Lucida console, Courier; font-size: 12px; width: 500px; height: 150px; overflow: scroll;">select * from esltypes</textarea>
+			</td>
+		</tr>	
+		<tr>
+			<td valign="top" colspan="2">
+				<div style="margin-top: 0px; margin-left: 0px; color: black; font-family: Arial; font-size: 12px;" id="response"></div>
+			</td>
+		</tr>	
+	</table>
+	
+	</div>
+	
+</body>
+</html>
+

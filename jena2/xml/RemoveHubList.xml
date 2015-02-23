@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<message msgId="12" msgCommand="RemoveHubList" 
+xsi:schemaLocation="http://s5tech.com/network schema.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://s5tech.com/network">
+	<hubList>
+		<mac>0015BC000C01</mac>
+		<mac>0015BC000C02</mac>
+		<mac>0015BC000C03</mac>
+		<mac>0015BC000C04</mac>
+		<mac>0015BC000C05</mac>
+	</hubList>
+</message>

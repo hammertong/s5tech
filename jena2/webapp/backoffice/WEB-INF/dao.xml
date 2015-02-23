@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+
+<dao>
+
+	<jdbc>
+	
+		<!--
+		<datasource>jdbc/backend</datasource>
+		-->
+		
+		<!--
+		<driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</driver>
+		<url>jdbc:sqlserver://127.0.0.1\SQLEXPRESS2008;databaseName=backenddev</url>
+		<username>sa</username>
+		<password>s5tech123!</password>
+		-->
+		
+		<!--
+		<driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</driver>
+		<url>jdbc:sqlserver://127.0.0.1\SQLEXPRESS2008;databaseName=backenddev-sigmaorizzonte</url>
+		<username>sa</username>
+		<password>s5tech123!</password>		
+		-->
+		
+		<!--
+		<pool class="com.microsoft.sqlserver.jdbc.SQLServerConnectionPoolDataSource" test="SELECT 1">
+			<url>jdbc:sqlserver://127.0.0.1\SQLEXPRESS2008;databaseName=backenddev-sigmaorizzonte</url>	
+			<user>sa</user>
+			<password>s5tech123!</password>
+		</pool>
+		-->
+		
+		<pool class="org.apache.commons.dbcp2.BasicDataSource" test="SELECT 1">
+			<driverClassName></driverClassName>
+			<url>jdbc:sqlserver://127.0.0.1\SQLEXPRESS2008;databaseName=backenddev-sigmaorizzonte</url>	
+			<username>sa</username>
+			<password>s5tech123!</password>
+		</pool>
+		
+	</jdbc>
+	
+	<query name="login" class="com.s5tech.backend.model.User">
+		<sql><![CDATA[
+			select * from users
+			where userId = ? 
+		]]></sql>
+	</query>
+	
+	<query name="find esl by product" class="com.s5tech.backend.model.Esl">
+		<sql><![CDATA[
+			select * from esls
+			where product = ?
+		]]></sql>
+	</query>
+		
+	<query name="find product" class="com.s5tech.backend.model.Product">
+		<sql><![CDATA[
+			select *
+			from products 
+			where product = dbo.GetProductFromScannedCode(?)
+		]]></sql>
+	</query>
+	
+	<query name="esl exists">
+		<sql><![CDATA[
+			select top 1 *
+			from esls 
+			where esl = ?
+		]]></sql>
+	</query>
+	
+	<query name="product associated">
+		<sql><![CDATA[
+			select TOP 1 * 
+			from esls 
+			where product = ?
+		]]></sql>
+	</query>
+	
+	<query name="product view">
+		<sql><![CDATA[
+			select fieldName 
+			from importDictionary			
+			where fieldDescription = 'products'
+		]]></sql>
+	</query>
+	
+	<storedprocedure name="pricer easy">
+		<!--
+			Parameters: 
+				@PRODUCT nvarchar(20) Product code or barcode.
+				@PRICE decimal(9,2) New price between 0.01 and 999.99 (50x35) or 1999.99 (70x35).
+				@PRICE_PER_UNIT decimal(9,2) New price per unit between 0.01 and 1999.99.
+				@DISCOUNT_PERCENTAGE int Between 1 and 100 (a value in this range means on). In case of multiple options switched on, only the first setting will be used.
+				@OFFER_FLAG int Boolean values: 0 (means off) or -1 (means on).
+				@OFFER_3X2_FLAG int Boolean values: 0 (means off) or -1 (means on).
+				@3X2_FLAG int Boolean values: 0 (means off) or -1 (means on).
+				@REWARD_POINTS int Between 1 and 999 (a value in this range means on).
+				@LANGUAGE nvarchar(20) Possible values: it-IT or en-US.
+				@USER_OR_PROCESS nvarchar(25) = 'spEasyModePriceChange'
+			error codes:					
+				50001 	Product not found
+				50002 	Esl not found
+				50003 	price not valid for ESL50
+				50004 	price not valid for ESL70				
+		-->
+		<sql><![CDATA[
+			dbo.spEasyModePriceChange(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		]]></sql>
+	</storedprocedure>
+	
+	<storedprocedure name="assesl join">
+		<!--
+			Parameters: 
+				@ESL nvarchar(16), 
+				@PRODUCT nvarchar(20),
+				@USER_OR_PROCESS nvarchar(25) = 'spEslProductJoinNew')
+			error codes:
+					0   Success
+				50001 	product not found
+				50002 	esl not found					
+			-->
+		<sql><![CDATA[
+			dbo.spEslProductJoinNew(?, ?, ?)
+		]]></sql>
+	</storedprocedure>
+	
+	<command name="assesl multiplelabelprinting">
+		<!--
+			Parameters: 
+				@PRODUCT ID nvarchar(16), 
+			-->
+		<sql><![CDATA[
+			insert into multipleLabelPrinting
+				(shelfCode, productCodeList, processed) 
+			values 
+				('', ?, '0')
+		]]></sql>
+	</command>
+	
+	<command name="remesl detach">
+	<!--
+			Parameters: 
+				@ESL ID nvarchar(16), 
+		-->
+		<sql><![CDATA[
+			update esls 
+				set product = null
+			where esl = ?			
+		]]></sql>
+	</command>
+	
+	<query name="eslupdates" class="com.s5tech.backend.model.EslUpdates" replaced="true">
+		<sql><![CDATA[
+			select TOP {1} e.esl, p.productDescription, e.product, e.publishingDate, 
+					isnull(e.acknoledgeDate, DATEADD(d, 1, CURRENT_TIMESTAMP)) as orderTime,				
+					e.acknoledgeDate,
+					e.sentPrice, e.sentPricePerUnit, e.updateUser
+			from eslUpdates e, products p
+			where e.product = p.product
+				and publishingDate > DATEADD(HH, -{2}, CURRENT_TIMESTAMP) 
+			order by orderTime desc, publishingDate desc			
+		]]></sql>
+	</query>
+	
+	<query name="eslupdates-by-current-user" class="com.s5tech.backend.model.EslUpdates" replaced="true">
+		<sql><![CDATA[
+			select TOP {1} e.esl, p.productDescription, e.product, e.publishingDate, 
+					isnull(e.acknoledgeDate, DATEADD(d, 1, CURRENT_TIMESTAMP)) as orderTime,				
+					e.acknoledgeDate,
+					e.sentPrice, e.sentPricePerUnit 
+			from eslUpdates e, products p
+			where e.product = p.product  
+				and publishingDate > DATEADD(HH, -{2}, CURRENT_TIMESTAMP) 
+				and e.updateUser = '{3}'
+			order by orderTime desc, publishingDate desc
+		]]></sql>
+	</query>
+	
+	<query name="alerts" class="com.s5tech.backend.model.Alerts" replaced="true">
+		<sql><![CDATA[
+			select TOP {1} id, alertType, title, lastUpdate
+			from alerts
+			where lastUpdate > DATEADD(HH, -{2}, CURRENT_TIMESTAMP)
+			order by lastUpdate desc
+		]]></sql>
+	</query>
+	
+	<query name="alerts-message">
+		<sql><![CDATA[
+			select message
+			from alerts
+			where id = ?
+		]]></sql>
+	</query>
+	
+	<query name="permissions from installationsettings" class="com.s5tech.backend.model.Setting" replaced="true">
+		<sql><![CDATA[
+			select setting, value from installationSettings
+			where setting in (
+				'reportPriceChange', 
+				'priceChangeFunction', 
+				'networkDiagnostics'
+			)
+		]]></sql>
+	</query>
+	
+</dao>

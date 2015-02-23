@@ -1,0 +1,109 @@
+# /////////////////////////////////////////////////////////////////
+#
+#  Definizioni del display EPaper a 200 x 96 pixels
+#
+# /////////////////////////////////////////////////////////////////
+# 
+# - Definire le colonne con separatore ; come segue
+#
+#   fontname; font-type; font-size; x; y; testo da visualizzare
+#
+# - Se si pone nella prima colonna il valore 'barcode', il secondo campo 
+#   viene interpretato come tipo (EAN13, etc ...), il campo testo
+#   cioe' l'ultimo e' il codice.
+#
+# - Se si pone nella prima colonna il valore 'image', il record
+#   viene interpretato come immagine da importare. Vedere in fondo le 
+#   note relative alle immagini
+#
+#   Nota codici a barre.
+#   Per i codici EAN13 scrivere il codice a 12 cifre, il cheksum 
+#   digit viene calcolato e aggiunto alla fine automaticamente dal
+#   compilatore
+#
+#   barcode; type (ean13 ...); barcode-height; x; y; codice a barre
+#
+# - Nota sulle coordinate x, y
+#   le coordinate x y con un segno '-' davanti vengono interpretate 
+#   come ancoraggio a destra (per le x) e in basso (y)
+#   In caso contrario, l'ancoraggio e' a sinistra (x) in alto (y)
+#
+# - Definizione di parametri
+#   le righe che incominciano con @def vengono interpretate come
+#   definizioni di parametri, che possono successivamente essere 
+#   utilizzati col prefisso $, per esempio
+#
+#   @def mykey myvalue
+#
+#   puo' essere successivamente usato scrivendo $mykey
+#
+# - Caratteri speciali
+#   per stampare il carattere euro scrivere euro anteposto da backslash:
+#
+#   \euro
+#
+# - Note sui font
+#   se il nome del font (prima colonna) termina con .ttf viene 
+#   interpretato come nome di file e il programma tenta di caricare 
+#   il font dal file.
+#
+# - Note relative alle immagini
+#   il campo testo indica il nome del file, sono supportati tutti i
+#   formati conosciuti: png, gif, jpg, etc...
+#   il secondo campo se specificato indica il fattore di resize,
+#   per quest'ultimo esistono le segenti opzioni:
+#   - e' sempre un numero seguito da uno dei caratteri '%','w' o 'h'
+#   - % riduce l'intera immagine di un fattore percentuale 
+#       specificato dal numero
+#   - w riduce a larghezza in pixel specificati dal numero
+#   - h idem di sopra per l'altezza
+#
+# /////////////////////////////////////////////////////////////////
+#
+#  Area definizione parametri
+#
+# /////////////////////////////////////////////////////////////////
+
+@def  	 font            Agency FB
+@def     size-XXL		 34
+@def     size-XL		 20
+@def     size-L		     16
+@def     size-M	         14
+@def     size-S		     12
+
+# /////////////////////////////////////////////////////////////////
+#
+#  Area definizione display PNG
+#
+# /////////////////////////////////////////////////////////////////
+
+#
+# FONT;     STYLE;        SIZE;     X;    Y;    TEXT
+#
+$font;      plain;     $size-L;     0;     0;   Biscotti Bucaneve
+$font;      plain;     $size-L;     0;    15;   Doria
+$font;       bold;     $size-L;    -0;     0;   400 gr
+$font;       bold;    $size-XL;    -0;    25;   \euro 1,85
+
+$font;       bold;   $size-XXL;    64;     30;   \euro 0,92
+
+$font;      plain;     $size-S;    -0;    50;   \euro 4,63 / Kg
+$font;       bold;     $size-L;     0;   -15;   -50%
+
+$font;      plain;     $size-S;     0;    -0;   321.891
+
+#
+# BARCODE;   TYPE;    BARHEGHT;     X;     Y;   CODE
+# 
+
+barcode;    ean13;          20;    -0;    -0;   8379473022942
+#rss;       RSS14S;         50%;     -0;    -0;   0061414100001|1701010110A1B2C3
+#rss;        EAN-13;    70/y 30%;     -0;    -0;   876185628105
+
+#
+# IMAGE; RESERVED;  RESERVED;     X;    Y;  file PATH
+# 
+
+image;    20%;               *;     0;    38;   ./test/images/esselunga/sconto_fidaty75x40.png
+#image;   20w;               *;     0;    35;   ./test/images/esselunga/punti_fragola111x40.png
+#image;   20h;               *;     0;    55;   ./test/images/andreea/fragolona5.png

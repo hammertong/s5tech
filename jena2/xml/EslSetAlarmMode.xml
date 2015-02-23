@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<message msgId="12" msgCommand="EslSetAlarmMode" xsi:schemaLocation="http://s5tech.com/network schema.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://s5tech.com/network">
+	<!-- Expect acks for each esl in the list --> 
+	<eslList>
+		<mac>0015BC0000000011</mac>
+		<mac>0015BC0000000012</mac>
+		<mac>0015BC0000000013</mac>
+		<mac>0015BC0000000014</mac>
+		<mac>0015BC0000000015</mac>
+		<mac>0015BC0000000016</mac>
+	</eslList>
+	<alarmEnabled>true</alarmEnabled>
+</message>

@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema elementFormDefault="qualified" targetNamespace="http://s5tech.com/network" xmlns="http://s5tech.com/network" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<!-- This is the type for a 48 bit mac address used on ethernet networks. The byteorder is Big Endian -->
+	<xs:simpleType name="eui48Address">
+		<xs:restriction base="xs:hexBinary">
+			<xs:length value="6"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!-- This is the type for a 64 bit mac address used on 802.15.4 networks. The byteorder is Big Endian -->
+	<xs:simpleType name="eui64Address">
+		<xs:restriction base="xs:hexBinary">
+			<xs:length value="8"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!-- This type contains a binary key of an undefined size -->
+	<xs:simpleType name="keyInfo">
+		<xs:restriction base="xs:base64Binary" />
+	</xs:simpleType>
+	<!-- This is the type for a hash value -->
+	<xs:simpleType name="hashValue">
+		<xs:restriction base="xs:nonNegativeInteger" />
+	</xs:simpleType>
+	<xs:simpleType name="percent">
+		<xs:restriction base="xs:integer">
+			<xs:minInclusive value="0"/>
+			<xs:maxInclusive value="100"/>
+		</xs:restriction>
+	</xs:simpleType>	
+	<xs:simpleType name="maxBufNo">
+		<xs:restriction base="xs:integer">
+			<xs:minInclusive value="1"/>
+			<xs:maxInclusive value="15"/>
+		</xs:restriction>
+	</xs:simpleType>	
+	<xs:simpleType name="channelNo">
+		<xs:union>
+			<xs:simpleType>
+				<xs:restriction base="xs:integer">
+					<xs:minInclusive value="11"/>
+					<xs:maxInclusive value="26"/>
+				</xs:restriction>
+			</xs:simpleType>
+			<xs:simpleType>
+	            <xs:restriction base="xs:string">
+	              <xs:enumeration value="offline"/>
+	            </xs:restriction>
+			</xs:simpleType>
+		</xs:union>
+	</xs:simpleType>
+	<xs:simpleType name="eslEventType">
+		<xs:restriction base="xs:token">
+			<xs:enumeration value="Joined"/>
+			<xs:enumeration value="Lost"/>
+			<xs:enumeration value="Rejoined"/>
+			<xs:enumeration value="UnauthorizedJoinAttempt"/>
+			<xs:enumeration value="KeyChange"/>
+			<xs:enumeration value="PriceUnknown"/>
+			<xs:enumeration value="Scanprobe"/>
+			<xs:enumeration value="RailAlarm"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="coordinatorEventType">
+		<xs:restriction base="xs:token">
+			<xs:enumeration value="Online"/>
+			<xs:enumeration value="Offline"/>
+			<xs:enumeration value="Timeout"/>
+			<xs:enumeration value="ChannelChanged"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="hubEventType">
+		<xs:restriction base="xs:token">
+			<xs:enumeration value="Online"/>
+			<xs:enumeration value="Timeout"/>
+			<xs:enumeration value="ipAddressChanged"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="eslEvent">
+		<xs:attribute name="eslMac" type="eui64Address" use="required"/>
+		<xs:attribute name="type" type="eslEventType" use="required"/>
+		<xs:attribute name="time" type="xs:dateTime" use="required"/>
+		<xs:attribute name="coordinatorMac" type="xs:string" use="optional"/>
+		<!-- begin new schema version --> 
+		<xs:attribute name="eslShortAddress" type="xs:integer" use="optional" />
+		<xs:attribute name="eslType" type="xs:string" use="optional" />
+		<!-- end new schema version -->
+	</xs:complexType>
+	<xs:complexType name="coordinatorEvent">
+		<xs:attribute name="coordinatorMac" type="eui64Address" use="required"/>
+		<xs:attribute name="type" type="coordinatorEventType" use="required"/>
+		<xs:attribute name="time" type="xs:dateTime" use="optional"/>
+		<xs:attribute name="port" type="xs:string" use="optional"/>
+		<xs:attribute name="channel" type="channelNo" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="hubEvent">
+		<xs:attribute name="hubMac" type="eui48Address" use="required"/>
+		<xs:attribute name="type" type="hubEventType" use="required"/>
+		<xs:attribute name="time" type="xs:dateTime" use="optional"/>
+		<xs:attribute name="ipAddress" type="xs:string" use="optional"/>
+	</xs:complexType>
+	<xs:simpleType name="powerStatus">
+		<xs:restriction base="xs:token">
+			<xs:enumeration value="Off"/>
+			<xs:enumeration value="Ac"/>
+			<xs:enumeration value="Battery"/>
+			<xs:enumeration value="LowBattery"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!-- Contains installation information for an esl -->
+	<xs:complexType name="eslInstallationInfo">
+		<xs:attribute name="mac" type="eui64Address" use="required"/>
+		<xs:attribute name="eslShortAddress" type="xs:integer" use="optional"/>
+		<xs:attribute name="type" type="xs:string" use="optional"/>
+		<xs:attribute name="installationKey" type="keyInfo" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="eslChannelToJoinInfo">
+		<xs:attribute name="channel" type="xs:integer" use="required"/>
+		<xs:attribute name="secsToWait" type="xs:integer" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="eslStatusRequestInfo">
+		<xs:attribute name="maxBuf" type="maxBufNo" use="optional"/>		
+		<xs:attribute name="secsToWait" type="xs:integer" use="optional"/>
+	</xs:complexType>	
+	<!-- All possible message commands -->
+	<xs:simpleType name="messageCommand">
+		<xs:restriction base="xs:token">
+			<xs:enumeration value="SetStoreKey"/>
+			<xs:enumeration value="AddEslList"/>			
+			<xs:enumeration value="RemoveEslList"/>
+			<xs:enumeration value="EslPriceUpdate"/> <!-- The 'all' keyword is ignored on the EslList contained in messages with this command -->
+			<xs:enumeration value="EslEnterNightMode"/>
+			<xs:enumeration value="EslSetActiveServicePage"/>
+			<xs:enumeration value="EslFirmwareUpdate"/>
+			<xs:enumeration value="EslSetAlarmMode"/>
+			<xs:enumeration value="EslEvent"/>
+			<xs:enumeration value="EslStatus"/>
+			<xs:enumeration value="EslStatistics"/>
+			<xs:enumeration value="EslSetChannelToJoin"/>
+			<xs:enumeration value="EslStatisticsRequest"/>
+			<xs:enumeration value="EslKill"/>
+			<xs:enumeration value="EslLeave"/>
+			<xs:enumeration value="EslStatusRequest"/>
+			<xs:enumeration value="CoordinatorEvent"/>
+			<xs:enumeration value="HubEvent"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!-- The result of a command issued by the server. Used in the ackMessage -->
+	<xs:simpleType name="commandResult">
+		<xs:restriction base="xs:token">
+			<xs:enumeration value="Success"/>
+			<xs:enumeration value="Failure"/>
+			<xs:enumeration value="Timeout"/>
+			<xs:enumeration value="NoRoute"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!-- Basic message information. Contains msg identification (for ack/response), and the issued command-->
+	<xs:attributeGroup name="messageAttributes">
+		<xs:attribute name="mac" use="optional">
+			<xs:simpleType>
+				<xs:union>
+					<xs:simpleType>
+						<xs:restriction base="eui48Address"/>
+					</xs:simpleType>
+					<xs:simpleType>
+						<xs:restriction base="eui64Address"/>
+					</xs:simpleType>
+				</xs:union>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="msgId" type="xs:string" use="required"/>
+    <xs:attribute name="msgCommand" type="messageCommand" use="required"/>
+    <xs:attribute name="creationTime" type="xs:dateTime" use="optional"/>
+  </xs:attributeGroup>
+	<!-- time: activation, duration, interval -->
+	<xs:complexType name="timeInformation" >
+		<xs:attribute name="activation" use="optional">
+			<xs:simpleType>
+				<xs:union>
+					<xs:simpleType>
+						<xs:restriction base="xs:dateTime"/>
+					</xs:simpleType>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+						  <xs:enumeration value="now"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:union>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="durationSecs" type="xs:positiveInteger" use="optional"/>
+		<xs:attribute name="intervalSecs" type="xs:positiveInteger" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="deviceInRange">
+		<xs:attribute name="mac" use="required">
+			<xs:simpleType>
+				<xs:union>
+					<xs:simpleType>
+						<xs:restriction base="eui48Address"/>
+					</xs:simpleType>
+					<xs:simpleType>
+						<xs:restriction base="eui64Address"/>
+					</xs:simpleType>
+				</xs:union>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="signalLevel" type="percent" use="required"/>
+	</xs:complexType>
+	
+	<!-- ***************************************************************** -->	
+	<!-- Below is the elements, or "building blocks" for creating messages -->
+	<!-- ***************************************************************** -->	
+
+	<xs:element name="message">
+		<xs:complexType mixed="true">
+			<xs:sequence>
+				<xs:any maxOccurs="unbounded" minOccurs="0" />
+			</xs:sequence>
+			<xs:attributeGroup ref="messageAttributes"/>
+		</xs:complexType>
+	</xs:element>
+	<!-- This is an ack message from  -->
+	<xs:element name="ackMessage">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element maxOccurs="1" minOccurs="1" name="description" nillable="true" type="xs:string"/>
+				<xs:any maxOccurs="unbounded" minOccurs="0"/>
+			</xs:sequence>
+			<xs:attribute name="result" type="commandResult" use="required"/>
+			<xs:attributeGroup ref="messageAttributes"/>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="eslList">
+		<xs:complexType>
+				<xs:sequence>
+					<xs:choice>
+						<xs:element maxOccurs="unbounded" minOccurs="0" name="mac" nillable="false" type="eui64Address"/>
+						<xs:element maxOccurs="unbounded" minOccurs="0" name="esl" nillable="false" type="eslInstallationInfo"/>						
+					</xs:choice>
+				</xs:sequence>
+			<!-- Indicates that the message should be sent to all esls -->
+			<xs:attribute name="all" type="xs:boolean" use="optional"/>	
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="eslPriceData">
+    <xs:complexType >
+      <xs:simpleContent>
+        <xs:extension base="xs:base64Binary">
+          <xs:attribute name="activationTime" type="xs:dateTime" use="required"/>
+          <xs:attribute name="hashCode" type="hashValue" use="required"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  	
+	<xs:element name="firmware">
+	    <xs:complexType>
+	      <xs:simpleContent>
+	        <xs:extension base="xs:base64Binary">
+	          <xs:attribute name="startNow" type="xs:boolean" use="required"/>
+	        </xs:extension>
+	      </xs:simpleContent>
+	    </xs:complexType>
+    </xs:element>
+    
+	<xs:element name="key" type="keyInfo" />
+	<xs:element name="hash" type="hashValue" />
+	<xs:element name="time" type="timeInformation" />
+	<xs:element name="alarmEnabled" type="xs:boolean" />
+	<xs:element name="mac" type="eui64Address"/>
+	<xs:element name="eslEvent" type="eslEvent"/>
+	<xs:element name="coordinatorEvent" type="coordinatorEvent"/>
+	<xs:element name="hubEvent" type="hubEvent"/>
+	<xs:element name="eslChannelToJoin" type="eslChannelToJoinInfo"/>
+	<xs:element name="eslStatusRequest" type="eslStatusRequestInfo"/>
+	<xs:element name="eslStatus">
+		<xs:complexType>
+			<xs:all>
+				<xs:element maxOccurs="1" minOccurs="1" name="hashCodeActivePrice" type="hashValue" nillable="false"/>
+				<xs:element maxOccurs="1" minOccurs="1" name="hashCodePendingPrice" type="hashValue" nillable="false"/>
+				<xs:element maxOccurs="1" minOccurs="1" name="batteryLevel" type="percent" nillable="false"/>
+				<xs:element maxOccurs="1" minOccurs="1" name="txPower" type="percent" nillable="false"/>				
+				<xs:element maxOccurs="1" minOccurs="1" name="macAssociatedCoordinator" type="eui64Address" nillable="false" />
+				<xs:element maxOccurs="1" minOccurs="1" name="temperature" type="xs:float" nillable="false"/>
+				<xs:element maxOccurs="1" minOccurs="1" name="firmwareVersion" type="xs:string" nillable="false"/>
+				<xs:element maxOccurs="1" minOccurs="1" name="lifetimeHours" type="xs:positiveInteger" nillable="false"/>
+				<xs:element maxOccurs="1" minOccurs="1" name="channel" type="channelNo" nillable="false"/>
+				<xs:element maxOccurs="1" minOccurs="1" name="railDetected" type="xs:boolean" nillable="false"/>
+				<xs:element maxOccurs="1" minOccurs="1" name="nightMode" type="xs:boolean" nillable="false"/>
+				<xs:element maxOccurs="1" minOccurs="0" name="deviceType" type="xs:integer" nillable="true"/>
+				<xs:element maxOccurs="1" minOccurs="1" name="state" nillable="false">				
+					<xs:simpleType>
+						<xs:restriction base="xs:token">
+							<xs:enumeration value="Unknown"/>
+							<xs:enumeration value="Standby"/>
+							<xs:enumeration value="Operative"/>
+							<xs:enumeration value="Alarm"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="coordinatorsInRange">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="coordinator" type="deviceInRange" minOccurs="0" maxOccurs="unbounded" />
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:all>
+			<xs:attribute name="mac" type="eui64Address" use="required"/>
+		</xs:complexType>
+	</xs:element>	
+	<xs:element name="eslStatistics">
+		<xs:complexType>
+			<xs:all>			
+				<xs:element maxOccurs="1" minOccurs="1" name="nColdReset" type="xs:integer" nillable="false"/>				
+				<xs:element maxOccurs="1" minOccurs="1" name="nHotReset" type="xs:integer" nillable="false"/>				
+				<xs:element maxOccurs="1" minOccurs="1" name="nPushReset" type="xs:integer" nillable="false"/>
+				<xs:element maxOccurs="1" minOccurs="1" name="nOtaReset" type="xs:integer" nillable="false"/>
+				<xs:element maxOccurs="1" minOccurs="1" name="nAssertReset" type="xs:integer" nillable="false"/>
+				<xs:element maxOccurs="1" minOccurs="1" name="nPushSleep" type="xs:integer" nillable="false"/>
+				<xs:element maxOccurs="1" minOccurs="1" name="nNetSleep" type="xs:integer" nillable="false"/>
+				<xs:element maxOccurs="1" minOccurs="1" name="nScanSleep" type="xs:integer" nillable="false"/>
+				<xs:element maxOccurs="1" minOccurs="1" name="nPowerupSleep" type="xs:integer" nillable="false"/>
+				<xs:element maxOccurs="1" minOccurs="1" name="nStatusRetry" type="xs:integer" nillable="false"/>
+				<xs:element maxOccurs="1" minOccurs="1" name="nScan" type="xs:integer" nillable="false"/>				
+				<xs:element maxOccurs="1" minOccurs="1" name="time" type="xs:integer" nillable="false"/>
+				<xs:element maxOccurs="1" minOccurs="0" name="nJoinWDT" type="xs:integer" nillable="false"/>
+			</xs:all>
+			<xs:attribute name="mac" type="eui64Address" use="required"/>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>
+

@@ -1,0 +1,287 @@
+
+body
+{
+    width:80%;
+    margin-left:auto;
+    margin-right:auto;
+	margin-top: 30px;
+	font-family: Verdana, Helvetica, Arial;
+	font-size: 12px;
+	color: #105d66; 
+}
+
+.error 
+{ 	
+	font-size: 12px; 
+	color: #AA0000; 
+	font-weight: normal; 
+	text-decoration: underline;	
+}
+
+img.trans 
+{
+    opacity: 0.6;
+    filter: alpha(opacity=40); /* For IE8 and earlier */
+}
+
+img.trans:hover 
+{
+    opacity: 1.0;
+    filter: alpha(opacity=100); /* For IE8 and earlier */
+} 
+
+img.ico 
+{
+	width: 40px;
+	height: 40px;
+}
+
+img.flag 
+{	
+	padding-left: 6px;
+	width: 20px;
+	height: 12px;
+}
+
+img.led
+{	
+	width: 16px;
+	height: 16px;
+}
+
+.copyright
+{
+	font-family: Arial Narrow, Helvetica, Arial;	
+	font-size: 12px;
+	color: #808080;
+}
+
+input[type="text"] 
+{
+	font-size: 12px;		
+	border: 1px #105d66 solid;
+	background: #FFFFEE;
+	color: #105d66;
+}
+
+input[type="password"] 
+{
+	font-size: 12px;
+	border: 1px #105d66 solid;
+	background: #FFFFEE;
+	color: #105d66;
+}
+
+input[type="button"] {
+	font-size: 12px;	
+	cursor: pointer;
+	font-weight: normal;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+	color: #ccdfe1;
+	background: #105d66;	
+	border: 1px #105d66 solid;	
+}
+
+input[type="button"]:hover {
+	color: #105d66;
+	background: #ccdfe1;
+}
+
+input[type="submit"]:disabled {
+	cursor: default;
+	opacity: 0.5;
+}
+
+input[type="submit"] {
+	font-size: 12px;
+	cursor: pointer;
+	font-weight: normal;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+	color: #ccdfe1;
+	background: #105d66;	
+	border: 1px #105d66 solid;	
+}
+
+input[type="submit"]:hover {
+	color: #105d66;
+	background: #ccdfe1;
+}
+
+input[type="submit"]:disabled {
+	cursor: default;
+	opacity: 0.5;
+}
+
+select
+{	
+	color: #105d66; 
+	background: #ccdfe1; 
+	border: 1px solid #105d66;
+	cursor: pointer;
+	font-size: 10px;
+}
+
+option 
+{
+	font-size: 10px;
+}
+
+table.selectchannels
+{
+	padding: 5px;
+	font-size: 10px; 
+	font-weight: bolder;
+	cursor: default; 
+	width: 100px;
+	height: 100px;
+	-moz-border-radius: 5px;
+	border-radius: 5px; 
+	color: #105d66; 
+	background: #ccdfe1; 	
+	border-width: 1px;
+	border: 1px #105d66 solid;	
+}
+
+table.rounded
+{	
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+	border: 2px solid #105d66;
+	font-size: 12px; 
+}
+
+table.square
+{		
+	border: 2px solid #105d66;
+	font-size: 10px; 
+}
+
+
+table.filled
+{	
+	color: #105d66; 
+	background: #ccdfe1; 	
+	font-size: 12px;
+}
+
+tr.odd {
+	
+}
+
+tr.even {
+	background: #e2f5f7; 	
+}
+
+td.rounded 
+{
+	background: #105d66;
+	color: #ccdfe1;
+	font-weight: bolder;
+	opacity: 0.6;	
+}
+
+.header
+{
+	font-family: Arial; 
+	font-size: 10px; 
+	font-weight: bolder; 
+	color: #ccdfe1; 
+	background: #105d66;
+	cursor: default;
+}
+
+.blinking
+{
+	padding: 5px; 
+	font-size: 14px; 
+	font-weight: bolder; 
+	border: 2px solid; 
+	color: #ccdfe1; 
+	background: #105d66;
+	moz-border-radius: 10px; 
+	border-radius: 10px;
+}
+
+/*****************************************************************
+ *
+ * horizontal top navigation bar
+ *
+ *****************************************************************/
+ 
+.hnavbar 
+{
+	height: 32px;	
+	background: #105d66;
+	/*background: -moz-linear-gradient(#105d66, #ccdfe1);
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(16,93,102,0.65)), color-stop(100%,rgba(0,0,0,0))); /* Chrome,Safari4+ */	*/
+}
+
+td.hnav 
+{
+	text-align: center; 
+	border: 1px solid #ccdfe1; 	
+	border-bottom: 0px; 	
+	background: #105d66; 
+	color: #ccdfe1;	
+	cursor: pointer;
+	opacity: 0.65;
+	/* bordo arrotondato a in alto destra ... */
+	-moz-border-radius-topright: 10px;
+	border-top-right-radius: 20px; 		
+	/* bordo in rilievo ... */
+	/*-moz-box-shadow: inset 1px 1px 2px rgba(0,0,0,.5);		
+	box-shadow: inset 1px 1px 2px rgba(0,0,0,.5);*/	
+}
+
+td.hnavsel 
+{
+	-moz-border-radius-topright: 10px;
+	border-top-right-radius: 20px; 		
+	cursor: default;
+	text-align: center; 
+	border: 1px solid #105d66; 	
+	border-bottom: 0px; 
+	background: #ccdfe1; 
+	color: #105d66;	
+}
+
+td.hnavover 
+{	
+	-moz-border-radius-topright: 10px;
+	border-top-right-radius: 20px; 		
+	
+	text-align: center; 
+	border: 1px solid #ccdfe1; 	
+	border-bottom: 0px; 	
+	background: #105d66; 
+	color: #ccdfe1;	
+	cursor: pointer;	
+	opacity: 1.0;
+}
+
+td.hnavnotab 
+{
+	color: #ccdfe1; 
+	cursor: default;
+	border-bottom: 1px solid #105d66; 	
+}
+
+/*****************************************************************
+ *
+ * bottom status bar
+ *
+ *****************************************************************/
+
+.statusbar 
+{
+	height: 20px;
+	font-size: 10px; 
+	padding-top: 0px; 
+	padding-left: 10px; 
+	border-top: 1px solid;
+}

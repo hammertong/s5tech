@@ -1,0 +1,78 @@
+<html>
+<head>
+<link type="text/css" rel="stylesheet" href="css/default.css"/>
+<script type="text/javascript">
+
+function loadJSon(url, data)
+{	
+	if (window.XMLHttpRequest)
+	{
+	  xhttp=new XMLHttpRequest();
+	}
+	else
+	{
+	  xhttp=new ActiveXObject("Microsoft.XMLHTTP");
+	}	
+	xhttp.open("POST", url, false);
+	xhttp.setRequestHeader('Content-type','text/json');
+	xhttp.send(data);
+	
+	return eval('( ' + xhttp.responseText + ' )');
+}
+
+function displayResult()
+{
+	var o = loadJSon('../network/upgrading', null); 
+	
+	if (o && o.upgrading && o.upgrading.length > 0) 
+	{
+		document.location = 'upgrading.html';		 
+	}
+	else 
+	{
+		document.getElementById("uploadform").style.display = 'block';
+		document.getElementById('updatingImage').style.display = 'none';
+		document.getElementById('updatingError').style.display = 'block';
+		document.getElementById('starting').innerHTML = 'Aggiornamento fallito';
+	}
+}
+
+</script>
+</head>
+
+<body style="margin-top: 0px;" 
+	onload="setTimeout('displayResult()', 5000);">
+	
+	<div id="uploadform"">
+		<table class="formtable">
+			<tr>
+				<td colspan="2" class="formtableHeader" align="center">
+				Aggiornamento firmware ESLs
+				</td>
+			</tr>
+			<tr>
+				<td colspan="2">
+				&nbsp;
+				</td>
+			</tr>				
+			<tr>
+				<td colspan="2" align="center">
+					<b id="starting">Avvio in corso ...</b>
+					<img id="updatingImage" border="0" src="images/updating.gif"></img>
+					<div id="updatingError" style="display: none;" align="center">
+						<img border="0" src="images/error.gif"></img>
+						<br/>
+						<a href="upgrading.html">ritorna alla pagina di upload</a>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="2">
+				&nbsp;
+				</td>
+			</tr>	
+		</table>
+	</div>
+	
+</body>
+</html>

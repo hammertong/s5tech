@@ -1,0 +1,11 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<ackMessage xmlns="http://s5tech.com/network" 
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+		xsi:schemaLocation="http://s5tech.com/network schema.xsd" 
+		result="Success" 
+		msgId="12" 
+		msgCommand="EslStatusRequest">
+	<description>Completed network status request of all esls</description>
+</ackMessage>
+
+

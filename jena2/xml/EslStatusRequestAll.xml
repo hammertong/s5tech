@@ -1,0 +1,17 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<message msgId="12" msgCommand="EslStatusRequest" 
+xsi:schemaLocation="http://s5tech.com/network schema.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://s5tech.com/network">
+	<eslList all="true" />
+	<!-- request status for specific list of esls -->
+	<!--
+	<eslList>
+		<mac>0015BC0000000011</mac>
+		<mac>0015BC0000000012</mac>
+		<mac>0015BC0000000013</mac>
+		<mac>0015BC0000000014</mac>
+		<mac>00124B000112CA06</mac>
+		<mac>0015BC0000000016</mac>
+	</eslList>	
+	-->
+</message>
+

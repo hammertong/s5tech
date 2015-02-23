@@ -1,0 +1,63 @@
+<html>
+<head>
+<link type="text/css" rel="stylesheet" href="css/default.css"/>
+<script type="text/javascript" src="js/tbupdater.js"></script>
+<script type="text/javascript">
+
+function postRendering()
+{
+	var i, j;
+	var o = document.getElementById('displaydata');
+	
+	if (o == null) return;
+	if (o.children == null) return;
+	if (o.children[0] == null) return;
+	if (o.children[0].children == null) return;
+	if (o.children[0].children[0] == null) return;
+	if (o.children[0].children[0].children == null) return;
+	
+	var tb = o.children[0].children[0];	
+	var n = tb.children.length;
+	
+	for (i = 0; i < n; i ++)
+	{
+		if (i < 1) continue;
+		
+		if (i >= n - 1) break;
+		
+		tr = tb.children[i];
+		
+		if (!tr.children[2]) continue;
+		
+		p = parseInt(tr.children[2].innerHTML.replace('%', ' '));
+	    
+		var color = null;
+				
+		if (p > 80) {
+			color = 'red';
+		}
+		else if (p > 50) {
+			color = 'orange';
+		}
+		else if (p >  30) {
+			color = 'yellow';
+		}
+		
+		if (color != null) {
+			for (j = 0; j < tr.children.length; j++) {
+				tr.children[j].style.background = color;	
+				tr.children[j].style.borderBottom = '1px black solid';				
+			}			
+		}
+	}
+
+}	
+
+</script>
+</head>
+<body style="margin-top: 0px;" 
+	onload="startTbUpdater('../network/threads', 'xsl/threads.xsl', 'Nessun task rilevato !', postRendering)">
+	<div id="displaydata"></div>
+</body>
+</html>
+

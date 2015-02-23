@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<message msgId="12" msgCommand="AddEslList" 
+		xsi:schemaLocation="http://s5tech.com/network schema.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://s5tech.com/network">
+	<eslList>
+		<esl mac="00124B000160100E" type="6" eslShortAddress="10001" installationKey="WFhYWFlZWVk=" />
+		<esl mac="00124B000160100A" type="6" eslShortAddress="10002" installationKey="WFhYWFlZWVk=" />
+	</eslList>
+</message>

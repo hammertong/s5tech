@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<message msgId="12" msgCommand="EslEvent"
+xsi:schemaLocation="http://s5tech.com/network schema.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://s5tech.com/network">
+	<eslEvent eslMac="0015BC00D000C301" type="Joined" time="2010-02-22T08:06:57" />
+	<eslEvent eslMac="0015BC00D000C301" type="Lost" time="2010-02-22T08:06:57" />
+	<eslEvent eslMac="0015BC00D000C301" type="Rejoined" time="2010-02-22T08:06:57" />
+	<eslEvent eslMac="0015BC00D000C301" type="UnauthorizedJoinAttempt" time="2010-02-22T08:06:57" />
+	<eslEvent eslMac="0015BC00D000C301" type="KeyChange" time="2010-02-22T08:06:57" />
+	<eslEvent eslMac="0015BC00D000C301" type="RailAlarm" time="2010-02-22T08:06:57" />
+	<eslEvent eslMac="0015BC00D000C301" type="PriceUnknown" time="2010-02-22T08:06:57" />
+</message>

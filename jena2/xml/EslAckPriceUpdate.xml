@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<ackMessage msgId="1234" msgCommand="EslPriceUpdate" result="Success" mac="0015BC0000000011"
+xsi:schemaLocation="http://s5tech.com/network schema.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://s5tech.com/network">
+	<description>this is the description of the result / ack message</description>
+	<hash>143532451234</hash>
+</ackMessage>

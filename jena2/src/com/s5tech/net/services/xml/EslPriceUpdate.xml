@@ -1,0 +1,11 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<message msgId="@msgid" msgCommand="EslPriceUpdate" 
+xsi:schemaLocation="http://s5tech.com/network schema.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://s5tech.com/network">
+	<eslList>
+		<mac>@mac</mac>
+	</eslList>
+	<eslPriceData activationTime="@activationtime" hashCode="@hash">
+  	@data
+	</eslPriceData>
+</message>
+

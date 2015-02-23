@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<message xmlns="http://s5tech.com/network" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+		xsi:schemaLocation="http://s5tech.com/network schema.xsd" 
+		mac="00124B000164B169" msgId="1" msgCommand="EslStatistics" creationTime="2012-02-03T11:45:10">
+	<eslStatistics mac="00124B000164B169">
+		<nColdReset>2</nColdReset>
+		<nHotReset>2</nHotReset>
+		<nPushReset>1</nPushReset>
+		<nOtaReset>0</nOtaReset>
+		<nAssertReset>0</nAssertReset>
+		<nPushSleep>0</nPushSleep>
+		<nNetSleep>0</nNetSleep>
+		<nScanSleep>0</nScanSleep>
+		<nPowerupSleep>2</nPowerupSleep>
+		<nStatusRetry>0</nStatusRetry>
+		<nScan>1</nScan>
+		<time>381584709</time>
+		<nJoinWDT>4</nJoinWDT>
+	</eslStatistics>
+</message>
+

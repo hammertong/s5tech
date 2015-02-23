@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<message msgId="12" msgCommand="EslStatus"
+xsi:schemaLocation="http://s5tech.com/network schema.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://s5tech.com/network">
+	<eslStatus mac="0015BC000D000001">
+		<batteryLevel>99</batteryLevel>
+		<txPower>99</txPower>
+		<macAssociatedHub>0015BC000D000601</macAssociatedHub>
+		<macAssociatedHubEth0>0015BC000D00</macAssociatedHubEth0>
+		<hashCodeActivePrice>345</hashCodeActivePrice>
+		<hashCodePendingPrice>456</hashCodePendingPrice>
+		<temperature>65</temperature>
+		<firmwareVersion>1.00.5</firmwareVersion>
+		<lifetimeHours>999</lifetimeHours>
+		<channel>14</channel>
+    <railDetected>true</railDetected>
+    <nightMode>false</nightMode>
+    <state>Standby</state>
+		<hubsInRange>
+			<hub mac="0015BC000D000601" signalLevel="78"/>
+			<hub mac="0015BC000D000602" signalLevel="45"/>
+			<hub mac="0015BC000D000604" signalLevel="57"/>
+			<hub mac="0015BC000D000607" signalLevel="34"/>
+		</hubsInRange>
+	</eslStatus>
+</message>

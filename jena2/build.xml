@@ -1,0 +1,230 @@
+<?xml version="1.0"?>
+
+<project name="netapp" default="compile">
+
+	<property environment="env"/>
+	<property file="./build.version"/>
+	<property file="build.properties" />
+
+	<path id="library.path">
+		<fileset dir="${lib}">
+			<include name="**/*"/>
+		</fileset>		
+	</path>
+	
+	<path id="castor.path">
+		<fileset dir="${lib}">
+			<include name="castor*.jar"/>
+			<include name="commons-logging*.jar"/>
+			<!-- <include name="castorbuilder.properties"/> -->
+		</fileset>
+	</path>
+	
+	<target name="clean">
+		<delete dir="${build}" />
+		<delete dir="${dist}" />
+	</target>
+	
+	<target name="init">
+		<mkdir dir="${build}" />
+		<mkdir dir="${dist}" />
+	</target>
+	
+	<target name="compile" depends="init">		
+		<javac srcdir="${src}" destdir="${build}" 
+				optimize="yes" 
+				debug="false"  
+				deprecation="false" 
+				includeantruntime="false" >
+			<classpath refid="library.path" />
+		</javac>
+	</target>
+	
+	<target name="jar" description="Create plain jar from compiled sources">
+
+		<tstamp>
+			<format property="TIME_NOW" pattern="d-MMMM-yyyy HH:mm:ss" />
+		</tstamp>
+
+		<buildnumber file="build.number.${version}"/>
+		
+		<propertyfile file="build.number.${version}">
+			<entry key="buildnum" type="int" value="${build.number}" operation="=" pattern="0000"/>
+		</propertyfile>
+		
+		<property file="build.number.${version}"/>
+		
+		<manifest file="${build}/MANIFEST.MF">
+			<attribute name="Implementation-Title" value="${name} release" />
+			<attribute name="Implementation-Version" value="${version}.${buildnum}" />
+			<attribute name="Built-Date" value="${TIME_NOW}" />
+			<attribute name="Built-By" value="${env.USERNAME}" />
+			<attribute name="Main-Class" value="${mainclass}" />
+		</manifest>
+
+		<jar destfile="${dist}/${name}-RELEASE.jar" manifest="${build}/MANIFEST.MF">
+			<fileset dir="${build}">
+				<include name="**/*.class" />
+				<exclude name="test/**"/>
+				<exclude name="com/s5tech/net/xml/**"/>
+			</fileset>
+			<fileset dir="${src}">
+				<include name="**/*.sql" />
+				<include name="**/*.properties" />
+				<include name="**/*.xml" />
+				<exclude name="**/*.java" />
+				<exclude name="test/**"/>
+				<exclude name="com/s5tech/net/xml/**"/>
+			</fileset>			
+		</jar>
+		
+		<jar destfile="${dist}/${name}-public-xml.jar" manifest="${build}/MANIFEST.MF">
+			<fileset dir="${build}">
+				<include name="com/s5tech/net/xml/**"/>
+			</fileset>
+			<fileset dir="${src}">
+				<exclude name="**/*.java" />				
+				<include name="com/s5tech/net/xml/**"/>
+			</fileset>			
+		</jar>
+		
+	</target>
+	
+	<taskdef name="castor-srcgen" classname="org.castor.anttask.CastorCodeGenTask" classpathref="castor.path" />
+
+	<target name="gensrc" description="Generates java source from xml schema">
+		<delete failonerror="false" dir="${src}/com/s5tech/net/xml">
+			<include name="**/*.java"/>
+			<include name="**/.castor.cdr"/>
+		</delete>
+		<mkdir dir="${src}/com/s5tech/net/xml" />
+		<castor-srcgen file="xml/schema.xsd"
+					   verbose="true" 
+	                   todir="${src}"
+					   types="j2" 
+	                   package="com.s5tech.net.xml"	
+					   bindingfile="xml/castor-binding.xml"
+					/>
+		<replace dir="${src}/com/s5tech/net/xml" token="java.lang.Class " value="java.lang.Class&lt;?&gt; " >
+			<include name="**/*.java"/>
+		</replace>
+	</target>
+	
+	<target name="javadoc" description="Generate javadoc API">		
+		<javadoc sourcepath="${src}" 
+					classpathref="library.path" 
+					packagenames="${javadoc.packages}" 
+					destdir="${javadoc.dir}" 
+					access="${javadoc.access}" 
+					author="true" 
+					version="true" 
+					use="true" 
+					windowtitle="${name} API - Ver. ${version}" 
+					doctitle="${javadoc.title} - Ver. ${version}">			
+		</javadoc>	
+	</target>
+		
+	<target name="proguard" description="Create obfuscated jar for release">
+		
+		<property file="build.number.${version}"/>
+		
+		<tstamp>
+			<format property="TIME_NOW" pattern="d-MMMM-yyyy HH:mm:ss" />
+		</tstamp>
+
+		<taskdef resource="proguard/ant/task.properties" classpath="./proguard.jar" />
+		
+		<proguard configuration="proguard.S5" />		
+					
+		<jar destfile="${dist}/${name}.jar">
+		  	<zipgroupfileset dir="${dist}" includes="${name}-public-*.jar" /> 
+			<manifest>
+				<attribute name="Implementation-Title" value="${name} release" />
+				<attribute name="Implementation-Version" value="${version}.${buildnum}" />
+				<attribute name="Built-Date" value="${TIME_NOW}" />
+				<attribute name="Built-By" value="${env.USERNAME}" />
+				<attribute name="Main-Class" value="${mainclass}" />
+			</manifest>
+		</jar>
+		
+		<delete failonerror="false" dir="${dist}">
+			<include name="*proguard*"/>
+		</delete>
+		
+	</target>
+	
+	<target name="rebuild" description="Rebuild and obfuscate jar" depends="clean, compile, jar, proguard" />
+	
+	<target name="dist" description="Create ZIP archive containing required stuff to run application">
+				
+		<property file="./build.version" />
+		<property file="./build.number.${version}"/>
+
+		<tstamp>
+			<format property="CURTIME" pattern="yyyyMMddHHmm" />
+		</tstamp>
+
+		<echo file="VERSION" append="false">${version}.${buildnum}</echo>
+
+		<zip destfile="./webapp/backoffice.zip">
+			<fileset dir="webapp">
+				<include name="backoffice/stylesheets/**"/>
+				<include name="backoffice/images/**"/>
+				<include name="backoffice/js/**"/>
+				<include name="backoffice/WEB-INF/lib/**"/>
+				<include name="backoffice/WEB-INF/classes/**"/>
+				<include name="backoffice/WEB-INF/*.xml"/>
+				<include name="backoffice/WEB-INF/*.tld"/>	
+			</fileset>
+		</zip>
+			
+		<zip destfile="../NETWORKAPP-BUILD-${version}.${buildnum}-${CURTIME}.zip">
+			
+			<fileset dir="." >				
+				<include name="conf/**" />
+				<include name="lib/**" />								
+				<include name="security/**" />				
+				<include name="xml/schema.xsd" />												
+				<include name="run.cmd" />				
+				<include name="README.txt" />
+				<include name="VERSION" />																
+			</fileset>
+			
+			<zipfileset dir="${dist}" prefix="lib">
+				<include name="${name}.jar"/>
+			</zipfileset>
+			
+			<!--
+			<zipfileset dir="${dist}/apidocs" prefix="docs">
+				<include name="**/*"/>
+			</zipfileset>
+			-->
+			
+			<!-- add webapps here ... -->			
+			
+			<zipfileset dir="webapp/admin" prefix="webapp/admin">
+				<include name="**/*"/>				
+			</zipfileset>
+			
+			<zipfileset dir="webapp" prefix="webapp">
+				<include name="backoffice.zip"/>				
+			</zipfileset>
+			
+			<!--			
+			<zipfileset dir="webapp/backoffice" prefix="webapp/backoffice">
+				<include name="stylesheets/**"/>
+				<include name="images/**"/>
+				<include name="js/**"/>
+				<include name="WEB-INF/lib/**"/>
+				<include name="WEB-INF/classes/**"/>
+				<include name="WEB-INF/*.xml"/>
+				<include name="WEB-INF/*.tld"/>							
+			</zipfileset>
+			-->
+			
+		</zip>
+		
+	</target>	
+		
+</project>
+

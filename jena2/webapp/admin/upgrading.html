@@ -1,0 +1,182 @@
+<html>
+<head>
+<link type="text/css" rel="stylesheet" href="css/default.css"/>
+<script type="text/javascript" src="js/tbupdater.js"></script>
+<script type="text/javascript" src="js/downstream.js"></script>
+<script type="text/javascript">
+
+function postrendering()
+{
+	var o = document.getElementById('displaydata');
+	var tb = o.children[0].children[0];
+	var nr = (tb ? tb.children.length : 0);
+	
+	var showForm = true;
+	var pstatus = null;
+	var pbar1;
+	var pbar2;
+	var pbar3;
+	var count = 0;
+	var nodes = null;	
+	
+	if (n <= 2) {
+
+		document.getElementById("displaydata").style.display = 'none';
+		document.getElementById("uploadform").style.display = 'block';
+	
+	}
+	else {
+	
+		for (i = 0; i < nr; i ++)
+		{
+			if (i == 0) continue;
+			tr = tb.children[i];
+			//if (i % 2 == 1) tr.style.background = '#f0f0f0';	
+
+			nodes = tr.children[2].getElementsByTagName('b');
+			pstatus = nodes[0];
+			
+			if (pstatus && pstatus.innerHTML && pstatus.innerHTML == 'upgrading') 
+			{
+				if (!tr || !tr.children[7] || !tr.children[7].innerText) return;
+			
+				pbar1 = null;
+				pbar2 = null;
+				pbar3 = null;
+				
+				count = 0;
+
+				tr.children[2].getElementsByTagName('table')[0].style.display = 'block';
+				nodes = tr.children[2].getElementsByTagName('td');
+	
+				for (var k = 0; k < nodes.length; k++) {
+					count ++;
+					if (count == 1) pbar1 = nodes[k];
+					else if (count == 2) pbar2 = nodes[k];
+					else if (count == 3) pbar3 = nodes[k];
+				}
+				
+				var n = parseInt(tr.children[7].innerText);
+				var N = parseInt(tr.children[8].innerText);
+				var m = parseInt(tr.children[9].innerText);
+				var M = parseInt(tr.children[10].innerText);
+				
+				var x = n;
+				x --;
+				x *= M;
+				x += m;
+				
+				var y = M;
+				y *= N;
+				
+				//x *= 100:
+				x /= y;
+				x *= 100;
+				
+				var dnow = new Date();
+				var dstart = new Date(tr.children[3].innerText.replace("T", " ")); 
+				var diff = dnow - dstart;
+				
+				diff /= x;
+				diff *= 100;
+				diff = Math.round(diff);
+				diff += dstart.getTime();
+								
+				var dend = new Date(diff);
+
+				pstatus.style.display = 'none';
+				
+				pleft = 2 * Math.round(x) ;
+				pright = 200 - pleft; 
+				
+				pbar1.style.width = '' + pleft + 'px';
+				pbar2.style.width = '' + pright + 'px';
+				pbar3.innerHTML = '<b>' + Math.round(x) + ' %</b>';
+				
+				tr.children[3].innerHTML = formatDateSpec(dstart);
+				tr.children[4].innerHTML = formatDateSpec(dend);
+				
+				tr.style.background = '#ffffff';
+				
+				showForm = false;
+				
+			}
+			else 
+			{
+				tr.style.background = '#e0e0e0';
+			}	
+			
+		}			
+	}	
+	
+	if (showForm) {
+		document.getElementById("uploadform").style.display = 'block';
+	}
+}
+
+function checkfile (inputfield) 
+{
+	var ok = false;
+	
+	if (inputfield.value.indexOf(".") > 0) 
+	{
+		if (inputfield.value.length > 4)
+		var ext = inputfield.value.substr(inputfield.value.length - 4);
+		switch(ext)
+		{
+			case '.bin':
+			case '.BIN':
+				ok = true;
+				break;
+			default:
+		}
+	}
+	
+	if (!ok) {
+		alert('Estensione file non consentita. Seleziona solo .bin o .BIN files!');
+		document.getElementById('submitUpload').disabled = true;
+		inputfield.value = '';
+	}
+	else {
+		document.getElementById('submitUpload').disabled = false;
+	}
+	
+}
+
+</script>
+</head>
+
+<body style="margin-top: 0px;" 
+	onload="startTbUpdater('../network/upgrading', 'xsl/upgrading.xsl', 'Nessun firmware upgrade in corso.', postrendering)">
+	
+	<div id="uploadform" style="display: none;">
+		<form action="../upload/firmware?destinationPage=upgradestart.html" enctype="multipart/form-data" method="POST">
+			<table class="formtable">
+				<tr>
+					<td colspan="2" class="formtableHeader" align="center">
+					Aggiornamento firmware ESLs
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2" align="center">
+					Seleziona firmware file per l'upload (estensione .bin)
+					</td>
+				</tr>				
+				<tr>
+					<td><input type="file" name="firmware" id="firmwareUpload" onchange="checkfile(this)"></td>
+					<td><input type="submit" class="formfield" id="submitUpload" disabled="disabled" ></input></td>
+				</tr>		
+				<tr>
+					<td colspan="2">
+					&nbsp;
+					</td>
+				</tr>	
+			</table>
+		</form>
+	</div>
+	
+	<div id="displaydata"></div>
+
+</body>
+
+</html>

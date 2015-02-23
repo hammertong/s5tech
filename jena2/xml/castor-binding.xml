@@ -1,0 +1,69 @@
+<binding xmlns="http://www.castor.org/SourceGenerator/Binding" 
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+            xsi:schemaLocation="http://www.castor.org/SourceGenerator/Binding http://www.castor.org/binding.xsd">
+
+	<elementBinding name="/key">
+		<java-class name="KeyItem"/>
+	</elementBinding>
+	
+<!-- 
+	<elementBinding name="/mac">
+		<java-class name="Eui64Item"/>
+	</elementBinding>
+-->
+
+	<elementBinding name="/eslEvent">
+		<java-class name="EslEventItem"/>
+	</elementBinding>
+	
+	<elementBinding name="/coordinatorEvent">
+		<java-class name="CoordinaotrEventItem"/>
+	</elementBinding>
+
+	<elementBinding name="/hubEvent">
+		<java-class name="HubEventItem"/>
+	</elementBinding>
+	
+	<elementBinding name="/time">
+		<java-class name="TimeInfo"/>
+	</elementBinding>
+
+	<elementBinding name="/pageSet/time">
+		<java-class name="SetTimeInfo"/>
+	</elementBinding>
+
+	<elementBinding name="/hubStatus">
+		<java-class name="BasicHubStatus"/>
+	</elementBinding>
+
+	<elementBinding name="/extendedHubStatus/hubsInRange">
+		<java-class name="HubsInRangeOfHub"/>
+	</elementBinding>
+
+	<elementBinding name="/eslStatus/hubsInRange">
+		<java-class name="HubsInRangeOfEsl"/>
+	</elementBinding>
+
+	<elementBinding name="/extendedHubStatus/hubsInRange/hub">
+		<java-class name="HubInRangeOfHub"/>
+	</elementBinding>
+
+	<elementBinding name="/eslStatus/hubsInRange/hub">
+		<java-class name="HubInRangeOfEsl"/>
+	</elementBinding>
+
+	<elementBinding name="/eslList/esl">
+		<java-class name="EslItem"/>
+	</elementBinding>
+
+	<elementBinding name="/hubNetworkEvent">
+		<java-class name="HubNetworkEventItem"/>
+	</elementBinding>
+
+	<!-- without this HubEvent contains a compilation error because of name-clash of the mac element and attribute -->
+
+	<elementBinding name="/hubEvent/mac">
+		<java-class name="MacList"/>
+	</elementBinding>
+
+</binding>

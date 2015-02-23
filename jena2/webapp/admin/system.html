@@ -1,0 +1,349 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Sistema rilevato</title>
+<link rel="stylesheet" href="css/default.css" type="text/css">
+
+<script type="text/javascript">
+
+function getMem() {	
+	try {
+		if (window.XMLHttpRequest) {
+		  xhttp=new XMLHttpRequest();
+		}
+		else {
+		  xhttp=new ActiveXObject("Microsoft.XMLHTTP");
+		}	
+		xhttp.open("GET", '../network/system', false);
+		xhttp.setRequestHeader('Content-type','text/json');
+		xhttp.send("");	
+		var o = eval('( ' + xhttp.responseText + ' )');
+		return o.system;	
+	}
+	catch (e) {
+		return null;
+	}
+}
+
+function getNet() {	
+	try {
+		if (window.XMLHttpRequest) {
+		  xhttp=new XMLHttpRequest();
+		}
+		else {
+		  xhttp=new ActiveXObject("Microsoft.XMLHTTP");
+		}	
+		xhttp.open("GET", '../network/coordinators', false);
+		xhttp.setRequestHeader('Content-type','text/json');
+		xhttp.send("");	
+		var o = eval('( ' + xhttp.responseText + ' )');
+		return o.coordinators;	
+	}
+	catch (e) {
+		return null;
+	}
+}
+
+function toValue(x)
+{
+	var mf = x.split(' ');
+	var r = parseInt(mf[0]);
+	if (mf[1] == 'Mb') r *= 1000;
+	else if (mf[1] == 'Gb') r *= 1000000;
+	return r;
+}
+
+function formatUptime(x)
+{
+	var r = '';
+	var t = parseInt(x);
+	t = Math.floor(t / 1000);
+		
+	if (t >= 86400) {
+		var gg = Math.floor(t / 86400);
+		t %= 86400;
+		r += gg;
+		r += (gg == 1 ? ' giorno, ' : ' giorni, '); 
+	}
+	
+	if (t >= 3600) {
+		var hh = Math.floor(t / 3600);
+		t %= 3600;
+		r += hh;
+		r += (hh == 1 ? ' ora, ' : ' ore, '); 
+	}
+	
+	if (t >= 60) {
+		var mm = Math.floor(t / 60);
+		t %= 60;
+		r += mm;
+		r += (mm == 1 ? ' minuto' : ' minuti'); 
+	}
+	
+	if (t > 0)
+	{	
+		if (r.length > 0) r += ' e ';
+		r += t;
+		r += (t == 1 ? ' secondo.' : ' secondi.');
+	}
+	
+	return r;
+}
+
+function displaymem()
+{	
+	var chart;
+
+	var sd = getMem();
+	
+	var free = toValue(sd["mem-free"]);
+	var total = toValue(sd["mem-total"]);	
+	var mmax = toValue(sd["mem-max"]);
+	var used = total - free;
+
+	document.getElementById('memfree').innerHTML = sd["mem-free"];
+	document.getElementById('memmax').innerHTML = sd["mem-max"];
+	document.getElementById('memtotal').innerHTML = sd["mem-total"];
+	
+	var uu = total;
+	uu -= free;
+	uu /= 1024;
+	
+	document.getElementById('memused').innerHTML = Math.round(uu) + " Mb";
+		
+	var x1 = free;
+	x1 /= mmax;
+	x1 *= 100;
+	
+	var x2 = total;
+	x2 /= mmax;
+	x2 *= 100;
+	
+	var x3 = total;
+	x3 -= free;
+	x3 /= mmax;
+	x3 *= 100;
+	
+	document.getElementById('memfreebar').style.width = x1 + 'px';
+	document.getElementById('memtotalbar').style.width  = x2 + 'px';
+	document.getElementById('memusedbar').style.width  = x3 + 'px';
+
+	document.getElementById('osname').innerHTML = sd["os-name"];
+	document.getElementById('threads').innerHTML = sd["threads"];
+	document.getElementById('uptime').innerHTML = formatUptime(sd["uptime"]);
+	
+	//
+	// conteggio accentratori
+	//
+	
+	var cnet = getNet();
+	var addr = '';
+	var offc = 0;	
+	var accr = 0;
+	var accu = 0;
+
+	for (var i = 0; i < cnet.length; i ++) 
+	{
+		if (cnet[i].online != "true") offc ++;
+		
+		if (cnet[i].port_url.indexOf('tcp://') < 0 && cnet[i].port_url.indexOf('ssl://') < 0)
+		{
+			accu ++;
+		}
+		else {
+			var ip = cnet[i].port_url.substr(6);
+			var k = ip.indexOf(':');
+			if (k > 0) ip = ip.substr(0, k);
+			if (ip != null && addr.indexOf(ip) < 0) {
+				addr += ip + ' ';
+				accr ++;
+			}			
+		}		
+	}	
+		
+	document.getElementById('acc1').innerHTML = cnet.length;
+	document.getElementById('acc2').innerHTML = offc;
+	if (offc > 0) {
+		document.getElementById('acc2').style.color = '#ff0000';
+	}
+	else {
+		document.getElementById('acc2').style.color = '#000000';
+	}
+	document.getElementById('acc3').innerHTML = accr;
+	document.getElementById('acc4').innerHTML = accu;
+	
+	//
+	// fine conteggio
+	//
+	
+	//
+	// BEGIN pie graphic
+	//	
+	
+	var canvas = document.getElementById('memCanvas');
+	
+	if (!canvas || !canvas.getContext) {
+		document.getElementById('nohtml5').style.display = 'block';
+		return; // HTML-5 unsupported!
+	}
+		
+	var percuser = used;
+	percuser /= (used +  free);
+	percuser *= 2;
+	
+	var context = canvas.getContext('2d');
+	var x = canvas.width / 2;
+	var y = canvas.height / 2;
+	var radius = 75;
+	var startAngle = 0;
+	var endAngle = percuser * Math.PI;
+	var counterClockwise = true;
+
+	// used 
+	context.beginPath();
+	context.lineWidth = 1;
+	context.arc(x, y, radius, startAngle, endAngle, counterClockwise);	
+	context.moveTo (x + radius * Math.cos(endAngle), y + radius * Math.sin(endAngle));
+	context.lineTo (x, y);
+	context.lineTo (x + radius * Math.cos(startAngle), y + radius * Math.sin(startAngle));
+	context.fillStyle = "green";
+	context.fill();
+	context.strokeStyle = 'green';
+	context.stroke();	
+	
+	// free
+	context.beginPath();
+	context.lineWidth = 1;
+	context.arc(x, y, radius, endAngle, startAngle, counterClockwise);	
+	context.moveTo (x + radius * Math.cos(startAngle), y + radius * Math.sin(startAngle));
+	context.lineTo (x, y);
+	context.lineTo (x + radius * Math.cos(endAngle), y + radius * Math.sin(endAngle));
+	context.fillStyle = "#CC0000";
+	context.fill();
+	context.strokeStyle = "#CC0000";
+	context.stroke();	
+		
+	//
+	// END pie graphic
+	//	
+		
+	setTimeout("displaymem()", 2000);
+	
+}
+
+</script>
+</head>
+<body style="margin-top: 0px;" 
+	onload="displaymem()">
+	
+	<table style="font-size: 12px;" id="alldoc">
+
+		<tr>
+			<td colspan="2">
+				<b>Informazioni di sistema:</b>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2" align="left" valign="top">
+				<table style="font-size: 12px;">			
+					<tr>
+						<td>Sistema operativo:</td>
+						<td id="osname"></td>
+					</tr>
+					<tr>
+						<td style="width: 200px">Uptime:</td>
+						<td id="uptime"></td>
+					</tr>
+					<tr>
+						<td>Totale Accentratori:</td>
+						<td id="acc1" style="font-weight: bolder;">0</td>
+					</tr>	
+					<tr>
+						<td>Accentratori Offline:</td>
+						<td id="acc2" style="font-weight: bolder;">0</td>
+					</tr>
+					<tr>
+						<td>Numero Trasmettitori:</td>
+						<td id="acc3" style="font-weight: bolder;">0</td>
+					</tr>
+					<tr>
+						<td>Accentratori locali (USB):</td>
+						<td id="acc4" style="font-weight: bolder;">0</td>
+					</tr>
+					<tr>
+						<td>Tasks attivi:</td>
+						<td id="threads"></td>
+					</tr>	
+				</table>
+			</td>		
+		</tr>		
+		<tr>			
+			<td align="left">	
+				<table style="font-size: 12px;">			
+					<tr>
+						<td colspan="3">
+						Stato della memoria dedicata alla JVM:
+						</td>
+					</tr>	
+					
+					<tr>
+						<td style="width: 100px;">
+							<div id="memfreebar" style="width: 0px; background: green;">&nbsp;</div>						
+						</td>
+						<td align="right" style="width: 50px; color: green; font-weight: bolder;">
+							<span id="memfree">&nbsp;</span>
+						</td>
+						<td align="right" style="width: 50px; color: green; font-weight: bolder;">
+							libera
+						</td>
+					</tr>
+					
+					<tr>
+						<td style="width: 100px;">
+							<div id="memusedbar" style="width: 0px; background: #CC0000;">&nbsp;</div>						
+						</td>
+						<td align="right" style="width: 50px; color: #CC0000; font-weight: bolder;">
+							<span id="memused">&nbsp;</span>
+						</td>
+						<td align="right" style="width: 50px; color: #CC0000; font-weight: bolder;">
+							usata
+						</td>
+					</tr>
+					
+					<tr>
+						<td style="width: 100px;">
+							<div id="memtotalbar" style="width: 0px; background: #887700;">&nbsp;</div>						
+						</td>
+						<td align="right" style="width: 50px;">
+							<span id="memtotal">&nbsp;</span>
+						</td>
+						<td align="right" style="width: 50px;">
+							totale
+						</td>
+					</tr>
+					
+					<tr>
+						<td style="width: 100px;">
+							<div id="memmaxbar" style="width: 100px; background: #000088; color: #ffffff;">&nbsp;</div>						
+						</td>
+						<td align="right" style="width: 50px;">
+							<span id="memmax">&nbsp;</span>
+						</td>
+						<td align="right" style="width: 50px;">
+							massima
+						</td>
+					</tr>	
+			
+				</table>
+			</td>
+			<td align="left" valign="top">
+				<canvas id="memCanvas" width="200" height="200"></canvas>
+				<div style="display: none;" id="nohtml5">Grafico della memoria non disponibile<br>Questo browser non supporta HTML-5</div>
+			</td>
+		</tr>	
+		
+	</table>	
+	
+</body>
+</html>
+

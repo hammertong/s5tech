@@ -1,0 +1,2300 @@
+<html>
+<head>
+<link type="text/css" rel="stylesheet" href="css/default.css"/>
+<script type="text/javascript">
+
+function do_click(tgt)
+{
+	var targets = [ 'general', 'network', 'server', 'database', 'logger', 'ext', 'advanced' ];
+	for (var i = 0; i < targets.length; i ++) {
+		document.getElementById(targets[i]).style.display = 'none';
+		document.getElementById('tab_' + targets[i]).className = 'tab';
+	}
+	document.getElementById(tgt).style.display = 'block'; 
+	document.getElementById('tab_' + tgt).className = 'tabsel';
+}
+
+function setClosestComboValue(cmb, value)
+{
+	var opts = cmb.options;
+	
+	//
+	// 1st try: exact match
+	//
+	for (var i = 0; i < opts.length; i ++) {
+		if (opts[i].value == value) {
+			opts[i].selected = true;
+			return;
+		}		
+	}
+	
+	//
+	// 2nd try: closest integer in ascendent mode ...
+	//
+	try {
+		var m = parsInt(value);
+		for (var i = 0; i < opts.length; i ++) {
+			try {
+				var n = parsInt(opts[i].value);
+				if (n >= m) {
+					opts[i].selected = true;
+					return;
+				}
+			}
+			catch (e) {}
+		}
+	}
+	catch (ignorrred) {}
+}
+
+function on_load()
+{
+	//
+	// crea lista canali della broadcast allowed channels
+	//
+	document.getElementById('broadcastchannels').innerHTML = document.getElementById('channelstemplate').innerHTML;
+	
+	//
+	// nascondo alert di default
+	//
+	document.getElementById("newconfigalert").style.display = 'none';
+	
+	//
+	// clear all checkboxes ... per qualche inspiegabile fenomeno risultano checkate
+	//
+	var items = document.getElementsByTagName("input");
+	
+	for (var i = 0; i < items.length; i++) {
+	
+		if (!items[i].type) continue;
+		switch (items[i].type) {
+			case 'checkbox':
+				items[i].checked = false;
+				break;
+			case 'text':
+				items[i].onkeypress = function(evt) {
+					evt = evt || window.event;
+					var charCode = evt.keyCode || evt.which;
+					if (charCode == 13) {
+						cancelsubmit = true; 
+					}
+					else {
+						cancelsubmit = false;
+					}
+				};
+				break;
+		}
+	}
+	
+	//document.getElementById("config.restart").checked = true;
+	
+	//
+	// load configuration ...
+	//
+	
+	if (window.XMLHttpRequest)
+	{
+	  xhttp=new XMLHttpRequest();
+	}
+	else
+	{
+	  xhttp=new ActiveXObject("Microsoft.XMLHTTP");
+	}
+	
+	xhttp.open("GET", '../config/get', false);
+	xhttp.setRequestHeader('Content-type','text/plain');
+	xhttp.send(null);
+		
+	//alert(xhttp.responseText);
+	
+	var txt = xhttp.responseText;
+	var lines = txt.split(';');
+	//while (txt.indexOf(";") >= 0) {
+	//	txt = txt.replace(';', '<br>');
+	//}	
+	//document.getElementById("debug.txt").innerHTML = txt;
+
+	document.getElementById("logger.application").value = 'TRACE';
+	document.getElementById("logger.xmlserver").checked = true;
+	document.getElementById("logger.serialframing").checked = false;
+	document.getElementById("logger.scanprobes").checked = false;
+	document.getElementById("logger.history").checked = true;
+	document.getElementById("logger.webaccess").checked = false;
+	
+	for (var i = 0; i < lines.length; i ++) 
+	{
+		var k = lines[i].indexOf('|');
+		while (k >= 0) {			
+			lines[i] = lines[i].substr(0, k) + ';' + lines[i].substr(k + 1);
+			k = lines[i].indexOf('|');
+		}
+	
+		var n = lines[i].indexOf('=');
+		
+		if (n < 0) continue;
+		
+		var key = lines[i].substr(0, n);
+		var value = lines[i].substr(n + 1);		
+	
+		if (key.indexOf('network.') == 0) {
+			
+			var port = value;
+			var channels = '11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26';
+			var reconnectTimeout = '0';
+			
+			n = port.indexOf('?');
+			
+			if (n >= 0) 
+			{
+				var params = value.substr(n + 1).split('&');
+				for (var j = 0; j < params.length; j ++) {
+					if (params[j].indexOf('allowed') == 0 
+							|| params[j].indexOf('channels') == 0) {
+						channels = params[j].substr(params[j].indexOf('=') + 1);
+					}
+					else if (params[j].indexOf('reconnectTimeout') == 0) {
+						reconnectTimeout = params[j].substr(params[j].indexOf('=') + 1);
+					}
+				}
+				port = port.substr (0, n);
+			}
+			
+			var proto = "";
+			n = port.indexOf('://');
+			if (n > 0) {
+				proto = port.substr(0, n);
+				port = port.substr(n + 3);
+			}
+			else {
+				proto = 'rxtx'
+			}
+			
+			var p = '';
+			var s = port.split(':');
+			n = port.indexOf(':', n + 1);
+			if (n >= 0) {
+				address = s[0];
+				p = s[1];
+			}
+			else {
+				address = s[0];
+			}
+			
+			add_acc(proto, address, p, reconnectTimeout, channels)
+			
+		}
+		else if (key.indexOf('plugin.') == 0) {
+		
+			if (value == 'com.s5tech.net.plugin.ShutdownSocket') {
+				document.getElementById('plugin.1').checked = true;
+			}
+			else if (value == 'com.s5tech.net.plugin.RDateServer') {
+				document.getElementById('plugin.2').checked = true;
+			}
+						
+		}
+		else {
+		
+			switch (key) {
+			
+				case 'join.max.delay':				// populate combos
+				case 'maxDeliveryAttempts':
+				case 'removeAction':
+				case 'timeoutCoordinator':
+				case 'timeoutHub':
+				case 'firmware.transmission':
+				case 'maxPriceUpdateRetry':
+				case 'server.connector':
+				case 'timesetter.interval':
+				case 'log.filesize':
+				case 'log.rollingsize':				
+				case 'status.request.maxbuf':
+					setClosestComboValue(document.getElementById(key), value);
+					break;
+				case 'latency.timeout':
+					if (value == "" || value == "0") {
+						document.getElementById(key).checked = false;
+					}
+					else {
+						document.getElementById(key).checked = true;
+					}
+					break;
+				case 'authorization':
+					if (value == "" || value == "0") {
+						document.getElementById(key).checked = false;
+					}
+					else {
+						document.getElementById(key).checked = true;
+					}
+					break;
+				/*
+				case 'slot.timeout':
+					if (value == "" || value == "0") {
+						document.getElementById(key).checked = false;
+					}
+					else {
+						document.getElementById(key).checked = true;
+					}
+					break;
+				*/
+				case 'persistentPriceUpdate':
+					if (value == "true") {
+						document.getElementById(key).checked = true;
+						document.getElementById(key).value = "true";					
+					}
+					else {
+						document.getElementById(key).checked = false;						
+					}
+					break;					
+				case 'autocorrectTime':				// set checkboxes
+				case 'firmware.nocheck':
+				case 'skipEslFirmwareCheck':					
+				case 'discovery':
+				case 'upstream.disabled':
+				case 'authorizeAll':
+				case 'activemq.usejmx':
+				case 'activemq.persistent':
+				case 'activemq.server':
+				case 'enableleave':
+				case 'eslevent.unauthorized':
+				case 'eslevent.scanprobe':
+				case 'keepMessagesWhenOffline':
+					document.getElementById(key).checked = (value == 'true');
+					break;		
+				case 'hubBroadcastPort': 			// populate text boxes
+				case 'server.downqueue':
+				case 'server.upqueue':
+				case 'server.url':
+				case 'activemq.connector':
+				//case 'activemq.persistence.dir':
+				case 'serialReaderConnectTimeout':
+				case 'jdbc.password':
+				case 'jdbc.driver':
+				case 'jdbc.url':
+				case 'jdbc.username':
+				case 'shutdown.port':
+				case 'dateserver.port':									
+				case 'log.dir':
+				case 'log.archivedir':		
+				case 'join.max':
+				case 'webserver.commandLine':
+				case 'webapp.root':				
+					document.getElementById(key).value = value;
+					break;
+				
+				case 'discovery.allowedchannels': 	// populate channels boxes
+					setChannelsValue (document.getElementById ('broadcastchannels'), value);
+					break;
+					
+				case 'discovery.policy':			// SPECIFIC values for radio list
+					document.getElementById("discovery.policy." + value).checked = true;
+					break;
+				
+				case 'discovery.ipallow':			// SPECIFIC values for multiple select list
+				case 'discovery.ipdeny':
+					var pzs = value.split(',');
+					for (var j_ = 0; j_ < pzs.length; j_ ++) { add_exclusion(pzs[j_].trim()); } 
+					break;
+				
+				case 'logger.xmlserver':			// SPECIFIC values for logger checkboxes
+				case 'logger.serialframing':
+				case 'logger.scanprobes':
+				case 'logger.history':
+				case 'logger.webaccess':
+					if (value == 'TRACE' || value == 'trace') { document.getElementById(key).checked = true; }
+					else { document.getElementById(key).checked = false; }
+					break;
+				
+				case 'persistence':					// SPECIFIC values for persistence = "rw" checkbox
+					document.getElementById(key).checked = (value == 'rw');
+					break;
+				
+				case 'isnewconfig':
+					document.getElementById("newconfigalert").style.display = (value == 'true' ? 'block' : 'none');
+					break;
+					
+			}
+			
+		}
+	
+	}
+		
+	do_click('general');
+	
+}
+
+function replaceEncodedCharacters(s)
+{
+	
+	//trim value
+	
+	var i1 = 0;
+	while (s.charAt(i1) == ' ' || s.charAt(i1) == '\t') {
+		i1 ++;
+		totrim = true;
+	}
+
+	var i2 = s.length - 1;
+	while (s.charAt(i2) == ' ' || s.charAt(i2) == '\t') {
+		i2 --;
+	}
+	
+	if (i1 > 0 || i2 < s.length - 1) {
+		s = s.substr(i1, i2);
+	}
+	
+	// end trim 
+	
+	if (!s) return 'null';
+	
+	var _t = '';
+	for (var _j = 0; _j < s.length; _j ++) {
+		var c = s.charAt(_j);
+		switch (c) {
+			case '\\':
+				_t += "${bsl}";
+				break;
+			case '&':
+				_t += "${amp}";
+				break;
+			case ';':
+				_t += "${smc}";
+				break;
+			default:
+				_t += c;	
+		}
+	}
+	return _t;
+}
+
+function restartnow()
+{
+	document.getElementById("config.restart").checked = true;
+	do_submit();
+}
+
+var cancelsubmit = false;
+
+function do_submit()
+{
+	//alert('submit ...');
+	if (cancelsubmit) {
+		cancelsubmit = false;
+		return false;
+	}
+	
+	if (!confirm("Confermi i cambiamenti alla configurazione del sistema?\r\nLa network application dovra' essere riavviata...")) return false;
+	
+	var items = document.getElementsByTagName("input");
+	var policy = 'allow';
+	
+	for (var i = 0; i < items.length; i++) 
+	{
+		if (!items[i].type || !items[i].name) continue;
+		
+		switch (items[i].type) {
+		
+			case 'checkbox':
+				if (items[i].name.indexOf('logger.') == 0) {
+					if (items[i].checked) { items[i].value = 'TRACE'; }
+					else { items[i].checked = true; items[i].value = 'OFF'; }
+				}				
+				else if (items[i].name == 'latency.timeout') {
+					if (items[i].checked) items[i].value = "20000";
+					else items[i].value = "0";
+				}
+				else if (items[i].name == 'authorization') {
+					if (items[i].checked) items[i].value = "local";
+					else items[i].value = "";
+				}
+				/*
+				else if (items[i].name == 'slot.timeout') {
+					if (items[i].checked) items[i].value = "20000";
+					else items[i].value = "0";
+				}
+				*/				
+				else {
+					if (items[i].checked && (!items[i].value || items[i].value == "")) { 
+						items[i].value = 'true'; 
+					}
+					else if (!items[i].checked) {
+						if (items[i].name.indexOf('plugin.') == 0) {
+							items[i].enabled = false; 
+						}	
+						else {
+							items[i].checked = true;
+							items[i].value = "false";
+						}
+					}
+				}
+				break;
+				
+			case 'radio':
+				if (items[i].name == 'discoverypolicy' && items[i].checked) {
+					policy = items[i].value;
+					items[i].checked = false;
+				}
+				break;
+				
+			case 'hidden':				
+				if (items[i].name.indexOf('network.') == 0) {
+					var id = items[i].name.substr(8);							
+					var port = document.getElementById('network.proto.' + id).value;
+					port += "://" + document.getElementById('network.address.' + id).value;
+					if (port.indexOf("tcp://") == 0 || port.indexOf("ssl://") == 0) {
+						port += ":" + document.getElementById('network.port.' + id).value;
+					}
+					port += "?reconnectTimeout=" + document.getElementById('network.timeout.' + id).value;
+					port += "${amp}channels=" + getChannelsValue(document.getElementById('network.channelbox.' + id));
+					items[i].value = port;
+				}		
+				
+				if (items[i].name == "discovery.allowedchannels") {
+					items[i].value = getChannelsValue(document.getElementById('broadcastchannels'));
+				}
+				
+				break;	
+			
+			case 'text':
+				items[i].value = replaceEncodedCharacters(items[i].value);
+				if (items[i].name == 'join.max' && (items[i].value == "" || items[i].value == 'null')) {
+					items[i].disabled = true;
+				}				
+				
+				break;
+			
+			//case "submit":
+				//alert(items[i].name + ' = ' + items[i].value + " ... " + items[i].enabled);
+				//document.getelementById('configform').action = '../config/put' : 	
+	
+				//break;
+				
+		}
+	}
+	
+	var sel = document.getElementById('ipexc');	
+	var opts = sel.options;
+	var exclusions = ''; 
+	
+	for (var i = 0; i < opts.length; i ++) {
+		if (i > 0) exclusions += ',';
+		if (opts[i].text.length == 0) continue;
+		exclusions += opts[i].text;
+	}
+	
+	if (policy == 'deny') {
+		document.getElementById('discovery.policy').value = 'deny';
+		document.getElementById('discovery.ipallow').value = exclusions;
+		document.getElementById('discovery.ipallow').enabled = (exclusions.length > 0);
+		document.getElementById('discovery.ipdeny').enabled = false;
+	}
+	else {
+		document.getElementById('discovery.policy').value = 'allow';
+		document.getElementById('discovery.ipdeny').value = exclusions;
+		document.getElementById('discovery.ipdeny').enabled = (exclusions.length > 0);
+		document.getElementById('discovery.ipallow').enabled = false;			
+	}
+	
+	if (document.getElementById('server.connector').value.length == 0) {
+		document.getElementById('upstream.disabled').value = "true";
+		document.getElementById('upstream.disabled').enabled = true;
+	}
+	else {
+		document.getElementById('upstream.disabled').value = "false";
+		document.getElementById('upstream.disabled').enabled = false;
+	}
+		
+	return true;
+		
+}
+
+function setChannelsValue(box, channels)
+{
+	var items = box.getElementsByTagName("input");
+	for (var i = 0; i < items.length; i++) {
+		switch (items[i].type) {
+		case 'checkbox':
+			if (channels && channels.indexOf(items[i].value) >= 0) {
+				items[i].checked = true;
+			}
+			else {
+				items[i].checked = false;
+			}
+			break;	
+		}
+	}
+}
+
+function getChannelsValue(box)
+{
+	var s = '';	
+	var items = box.getElementsByTagName("input");
+	for (var i = 0; i < items.length; i++) {
+		switch (items[i].type) {
+		case 'checkbox':
+			if (items[i].checked) {
+				if (s.length > 0) s += ',';
+				s += items[i].value;
+			}
+			break;	
+		}
+	}			
+	return s;
+}
+
+function add_exclusion(opt)
+{
+	//
+	// validate data
+	//
+	if (!opt) return;
+	opt = opt.trim();
+	
+	if (opt.length == 0) return;
+	if (opt == '*') return;
+	if (opt.indexOf('.') == 0) return;
+	
+	var s = opt.split(".");
+	
+	if (s.length > 4) {
+		alert('ip "' + opt + '" not valid, cause: too many tokens');
+		return;
+	}
+	
+	var n = 0;
+	
+	for (var j = 0; j < s.length; j ++) {
+		try {	
+			if (s[j] == '*') break;
+			n = parseInt(s[j]);
+			if (isNaN(n) || n > 255 || n < 0) throw "invalid digits: " + s[j];
+		}
+		catch (x) {
+			alert('ip address "' + opt + '" not valid, cause: ' + x);
+			return;
+		}
+	}
+	//
+	// end validation ...
+	//
+	
+	var sel = document.getElementById('ipexc');	
+	var option = document.createElement("option");
+	option.text = opt;
+	for (var i = 0; i < sel.length; i ++) {
+		if (sel[i].text == opt) return;
+	}
+	sel.add(option, sel[sel.length]);
+}
+
+function remove_exclusions()
+{
+	if (window.event.keyCode != 46) return false;
+	var sel = document.getElementById('ipexc');	
+	var opts = sel.options;
+	for (var i = 0; i < opts.length; i ++) {
+		if (opts[i].selected) {
+			opts[i] = null;
+			i --;
+		}
+	}
+}
+
+var accnr = 0;
+
+function add_acc(proto, address, port, timeout, channels)
+{
+	var table = document.getElementById('networkTable');
+	var html = document.getElementById('networkTemplate').innerHTML;
+	
+	var n = table.rows.length;
+			
+	var row = table.insertRow(n);
+	
+	var cell = row.insertCell(0);
+	cell.colSpan = 3;
+	cell.className = 'tabBorderLeft';
+	cell.style.borderRight = '1px solid #000000';
+	
+	cell.innerHTML = html;
+	
+	accnr ++;
+	
+	var span = cell.children[0].children[0].children[0].children[0].children[0];
+	span.children[0].innerHTML = 'ACCENTRATORE NR. ' + accnr;
+	
+	var chbox = cell.children[0].children[0].children[0].children[1];
+	chbox.innerHTML = document.getElementById('channelstemplate').innerHTML + '<br>&nbsp;';
+	chbox.id = "network.channelbox." + n;
+	
+	var count = 0;
+	var items = cell.getElementsByTagName("*");
+	var s = '';
+	var chn = 11;
+	
+	for (var i = 0; i < items.length; i++) {
+		if (items[i].type) {
+			switch (items[i].type) {
+				case 'text':
+					switch (count) {
+						case 0:
+							items[i].value = address;
+							items[i].id = 'network.address.' + n;
+							break;
+						case 1:
+							items[i].value = (port ? port : '');
+							items[i].id = 'network.port.' + n;
+							break;
+						case 2:
+							items[i].value = timeout; 
+							items[i].id = 'network.timeout.' + n;
+							break;
+					}
+					count ++;
+					break;
+				case 'select-one':
+					items[i].value = proto;
+					items[i].id = 'network.proto.' + n;
+					break;
+				case 'checkbox':
+					s = '' + chn;
+					if (channels.indexOf(s) >= 0) items[i].checked = true;
+					chn ++;
+					break;
+				case 'button':
+					items[i].id = 'network.delete.' + n;
+					break;
+				case 'hidden':
+					items[i].id = 'network.params.' + n;
+					items[i].name = 'network.' + n;
+					break;
+			}
+		}
+	}
+
+}
+
+function del_acc(tgt)
+{
+	if (!confirm("Si e' sicuri di rimuovere questo accentratore?")) return;
+	var table = document.getElementById('networkTable');
+	table.deleteRow(parseInt(tgt.id.substr(tgt.id.lastIndexOf('.') + 1)));
+	
+	var nrows = table.rows.length;
+	var count = 0;
+	
+	var items = table.getElementsByTagName("input");
+	
+	for (var i = 0; i < items.length; i++) {
+		if (items[i].type) {
+			switch (items[i].type) {
+				case 'button':
+					if (items[i].value == 'rimuovi accentratore')
+					count ++;
+					items[i].id = 'network.delete.' + n;
+					break;
+			}
+		}		
+	}
+
+	var n = nrows;
+	n -= count; 
+	n --;
+
+	for (var i = 0; i < items.length; i++) {
+		if (items[i].type) {
+			switch (items[i].type) {
+				case 'button':
+					if (items[i].value == 'rimuovi accentratore')
+					items[i].id = 'network.delete.' + n;
+					n ++;
+					break;
+			}
+		}		
+	}	
+	
+}
+
+var xhttp_jdbc;
+
+function testconn()
+{
+	var img = document.getElementById('dbalert');
+	img.src = 'images/wait.gif';
+	
+	img.style.display = 'block';
+	document.getElementById("submit.checkconn").enabled = false;
+
+	if (window.XMLHttpRequest)
+	{
+	  xhttp_jdbc=new XMLHttpRequest();
+	}
+	else
+	{
+	  xhttp_jdbc=new ActiveXObject("Microsoft.XMLHTTP");
+	}
+	
+	var formdata = 'jdbc.driver=' + replaceEncodedCharacters(document.getElementById('jdbc.driver').value);
+	formdata = formdata += '&jdbc.url=' + replaceEncodedCharacters(document.getElementById('jdbc.url').value);
+	formdata = formdata += '&jdbc.username=' + replaceEncodedCharacters(document.getElementById('jdbc.username').value);
+	formdata = formdata += '&jdbc.password=' + replaceEncodedCharacters(document.getElementById('jdbc.password').value);
+	
+	xhttp_jdbc.onreadystatechange = function()
+	{
+		if (xhttp_jdbc.readyState == 4 && xhttp_jdbc.status == 200)
+		{
+			var ok = (xhttp_jdbc.responseText.indexOf('result=ok') >= 0);
+			
+			img.src = (ok ? 'images/dbok.png' : 'images/dbalert.png');	
+			
+			var color= "darkGreen";
+			if (!ok) {
+				var n = xhttp_jdbc.responseText.indexOf(':');
+				if (n < 0) n = 0;
+				else n += 2;
+				color = 'red';
+				alert ('Errore di connessione al database!\r\n' + xhttp_jdbc.responseText.substr(n));
+			}
+			
+			document.getElementById('jdbc.driver').style.border = '2px solid ' + color;
+			document.getElementById('jdbc.url').style.border  = '2px solid ' + color;
+			document.getElementById('jdbc.username').style.border  = '2px solid ' + color;
+			document.getElementById('jdbc.password').style.border  = '2px solid ' + color;
+			document.getElementById("submit.checkconn").enabled = true;
+			
+		}
+	}
+	
+	xhttp_jdbc.open("POST", '../config/jdbctest', true);
+	xhttp_jdbc.setRequestHeader('Content-type','text/plain');
+	xhttp_jdbc.send(formdata);
+	
+}
+
+function checkauthall()
+{
+	if (document.getElementById('authorizeAll').checked) {
+		if (!confirm("Attivando l'autorizzazione automatica verranno automaticamente attivati:\r\n\t1) autorizzazione locale (sez. Generali)\r\n\t2) accesso in scrittura (sez. Database)\r\n\r\nAttivare l'autorizzazione automatica e tutte le\nopzioni necessarie per farla funzionare?")) {
+			document.getElementById('authorizeAll').checked = false;
+			return;
+		}		
+		document.getElementById('authorization').checked = true;
+		document.getElementById('persistence').checked = true;		
+	}	
+}
+
+function checkauthwrite()
+{
+	if (!document.getElementById('persistence').checked) 
+	{
+		s = ''; 
+		if (document.getElementById('authorizeAll').checked) s += '\r\n\t- autorizzazione automatica';
+		if (document.getElementById('authorization').checked) s += '\r\n\t- autorizzazione locale';
+		if (s != '') {
+			if (!confirm("Attenzione: le seguenti opzioni attivate sono incompatibili\r\ncon la rimozione dell'accesso in scrittura:\r\n" + s + "\r\n\r\nProcedere con la disattivazione dell'accesso\r\nin scrittura e le opzioni collegate?")) {
+				document.getElementById('persistence').checked = true;
+				return;
+			}
+		}
+		document.getElementById('authorization').checked = false;
+		document.getElementById('authorizeAll').checked = false;		
+	}
+}
+
+function checkauthlocal()
+{
+	if (document.getElementById('authorization').checked) {
+		if (!document.getElementById('persistence').checked) {
+			if (!confirm("Attenzione: verra' attivato automaticamente anche l'accesso\r\nalla tabella esls in scrittura. Procedere comunque?")) {
+				document.getElementById('authorization').checked = false;
+				return;
+			}
+		}		
+		document.getElementById('persistence').checked = true;
+	}
+	else 
+	{
+		s = '';
+		if (document.getElementById('authorizeAll').checked) s += '\r\n\t- autorizzazione automatica';
+		if (document.getElementById('persistence').checked) s += '\r\n\t- accesso in scrittura';
+		if (s != '') {
+			if (!confirm("Attenzione: le seguenti opzioni attivate sono incompatibili\r\ncon la rimozione dell'autorizzazione locale:\r\n" + s + "\r\n\r\nProcedere con la disattivazione dell'autorizzazione\r\nlocale e le opzioni collegate?")) {
+				document.getElementById('authorization').checked = true;
+				return;
+			}
+		}
+		document.getElementById('persistence').checked = false;
+		document.getElementById('authorizeAll').checked = false;		
+	}	
+}
+
+function populateMSSQL()
+{
+	document.getElementById('jdbc.driver').value = 'com.microsoft.sqlserver.jdbc.SQLServerDriver';
+	document.getElementById('jdbc.url').value = 'jdbc:sqlserver://127.0.0.1\\SQLEXPRESS;databaseName=backenddev';
+	document.getElementById('jdbc.username').value = 'sa';
+	document.getElementById('jdbc.password').value = 's5tech123!';
+}
+
+function populateHSQLDB()
+{
+	document.getElementById('jdbc.driver').value = 'org.hsqldb.jdbc.JDBCDriver';
+	document.getElementById('jdbc.url').value = 'jdbc:hsqldb:file:./run/data/esldb/esldb';
+	document.getElementById('jdbc.username').value = 'SA';
+	document.getElementById('jdbc.password').value = '';
+}
+
+</script>
+</head>
+
+<body style="margin-top: 0px;" onload="on_load()">
+
+<h1 id="newconfigalert" class="" style="display: none;">Configurazione modificata. Riavviare l'applicazione!</h1>
+
+<div id="channelstemplate" style="display: none;">
+
+	<table style="font-size: 10px; border: 1px blue solid; font-weight: bolder; background: white;">
+		<tr>
+			<td colspan="4" style="font-weight: bolder; font-size: 10px; font-family: Arial; background: #808080; color: #ffffff;">	
+				Canali IEEE 802.15.4								
+			</td>
+		</tr>
+		<tr>
+			<td>				
+				<label style="color: red;"><input type="checkbox" value="11">11</label>
+				<label><input type="checkbox" value="12">12</label>
+				<label><input type="checkbox" value="13">13</label>
+				<label><input type="checkbox" value="14">14</label>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<label><input type="checkbox" value="15">15</label>
+				<label><input type="checkbox" value="16">16</label>
+				<label><input type="checkbox" value="17">17</label>
+				<label><input type="checkbox" value="18">18</label>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<label><input type="checkbox" value="19">19</label>
+				<label><input type="checkbox" value="20">20</label>
+				<label><input type="checkbox" value="21">21</label>
+				<label><input type="checkbox" value="22">22</label>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<label><input type="checkbox" value="23">23</label>
+				<label><input type="checkbox" value="24">24</label>
+				<label><input type="checkbox" value="25">25</label>
+				<label><input type="checkbox" value="26">26</label>
+			</td>
+		</tr>
+	</table>
+		
+</div>
+
+
+<div id="networkTemplate" style="display: none;">
+
+	<table border="0" cellpadding="0" cellspacing="0">
+			
+		<tr>
+		
+			<td valign="top" align="left">
+				
+				<span style="padding-top: 10px; font-family: Arial; font-size: 10px; font-weight: bolder;">
+				
+					<span>...</span> 
+					
+					&nbsp;&nbsp;&nbsp;&nbsp;
+					
+					Porta
+					
+					&nbsp;
+					
+					<select>
+						<option value="rxtx">RXTX</option>
+						<option value="file">FILE</option>
+						<option value="tcp" selected="true">TCP</option>
+						<option value="ssl">SSL</option>				
+					</select>
+					
+					<b>://</b>
+					
+					<input type="text" style="width: 110px;" value="...">
+					
+					<b>:</b>			
+					
+					<input type="text" value="..." size="5" style="width: 50px; text-align: right;">	
+					
+					&nbsp;&nbsp;
+					
+					Time-out di riconnessione (sec)
+					
+					&nbsp;
+					
+					<input type="text" style="width: 50px; text-align: right;" value="...">
+									
+				</span>	
+				
+				<br>
+				
+				<input type="button" style="border: 1px solid darkRed; background: white; font-size: 10px; font-weight: normal; color: red; " onclick="del_acc(this)" value="rimuovi accentratore">	
+				<input type="hidden" value="bla blahhh ...">	
+				
+			</td>
+			
+			<td valign="top" align="left" style="padding-left: 30px;">
+				... channels here ...
+			</td>
+		
+		</tr>
+		
+	</table>	
+	
+</div>
+
+<form action="../config/put" method="POST" onsubmit="return do_submit()" id="configform">
+
+<!-- 
+	// ///////////////////////////////////////////////////////////////////////////  
+	//
+	// HEADER
+	//
+	// /////////////////////////////////////////////////////////////////////////// 
+	-->
+<br>
+<table cellspacing="0" cellpadding="5" style="width: 900px; margin-top: -15px;">	
+	
+	<tr>
+		<td class="tab" align="left" 
+				onmouseover="this.style.textDecoration = 'underline';"
+				onmouseout="this.style.textDecoration = 'none';"
+				onclick="do_click('general')"
+				id="tab_general">
+			Generali
+		</td>
+		<td class="tab" align="left"
+				onmouseover="this.style.textDecoration = 'underline';"
+				onmouseout="this.style.textDecoration = 'none';"
+				onclick="do_click('network')"
+				id="tab_network">
+			Network
+		</td>
+		<td class="tab" align="left"
+				onmouseover="this.style.textDecoration = 'underline';"
+				onmouseout="this.style.textDecoration = 'none';"
+				onclick="do_click('server')"
+				id="tab_server">
+			Server
+		</td>
+		<td class="tab" align="left"
+				onmouseover="this.style.textDecoration = 'underline';"
+				onmouseout="this.style.textDecoration = 'none';"
+				onclick="do_click('database')"
+				id="tab_database">
+			Database
+		</td>
+		<td class="tab" align="left"
+				onmouseover="this.style.textDecoration = 'underline';"
+				onmouseout="this.style.textDecoration = 'none';"
+				onclick="do_click('logger')"
+				id="tab_logger">
+			Logger
+		</td>
+		<td class="tab" align="left"
+			onmouseover="this.style.textDecoration = 'underline';"
+			onmouseout="this.style.textDecoration = 'none';"
+			onclick="do_click('ext')"
+			id="tab_ext">
+			Estensioni
+		</td>
+		<td class="tab" align="left"
+				onmouseover="this.style.textDecoration = 'underline';"
+				onmouseout="this.style.textDecoration = 'none';"
+				onclick="do_click('advanced')"
+				id="tab_advanced">
+			Avanzate
+		</td>
+	</tr>
+	
+</table>	
+
+<!-- 
+	// ///////////////////////////////////////////////////////////////////////////  
+	//
+	// GENERAL PARAMETERS
+	//
+	// /////////////////////////////////////////////////////////////////////////// 
+	-->
+	
+<div id="general" style="display: block">
+
+<table cellspacing="0" cellpadding="5" style="font-size: 10px; width: 900px;">
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left"><b>Timeout</b> di risposta alla Join per ogni singola ESL</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<select name="join.max.delay" id="join.max.delay">
+				<option value="-1">Funzionalita' disattivata</option>
+				<option value="500">500 ms (fino a 10 nel buffer)</option>
+				<option value="400">400 ms (fino a 8 nel buffer)</option>
+				<option value="300">300 ms (fino a 6 nel buffer)</option>
+				<option value="200">200 ms (fino a 4 nel buffer)</option>
+				<option value="100">100 ms (fino a 2 nel buffer)</option>
+				<option value="50">50 ms (fino a 1 nel buffer)</option>
+			</select>
+		</td>	
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Specificare qui il tempo massimo di risposta dell'accentratore ad una 
+				richiesta di join di ogni singola ESL. 
+				Il valore sperimentalmente osservato e' di circa 400 ms (valore consigliato).
+                Tutte le richieste che non potranno essere soddisfatte entro 
+				questo timeout verranno ignorate costringendo le relative ESL a 
+				effettuare un secondo tentativo di rejoin.
+				<br><br>
+				<b style="color: darkRed;">IMPORTANTE: Disattivando questa funzionalita' si 
+				rischia di incorrere in un ingolfamento della scrittura sulla porta seriale 
+				durante le rejoin massive di migliaia di ESLs. Quindi non farlo in ambiente di produzione!</b>
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">Prevenzione <b>latency</b> reader-transmitter</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="checkbox" name="latency.timeout" id="latency.timeout" checked="false" value="20">
+		<!--
+			<input type="checkbox" name="slot.timeout" id="slot.timeout" checked="false" value="20">
+			-->
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Abilita il meccanismo corretivo degli effetti indesiderati di flooding del coordinator
+				causato dalle differenti lantencies del serial reader e del buffer transmitter.
+				Selezionare questa opzione per ridurre a zero il rischio di perdere alcuni aggiornamenti delle ESL.
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left"><b>Autorizzazione locale</b> ESLs</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="checkbox" name="authorization" id="authorization" checked="false" value="local" onclick="checkauthlocal()" onkeypress="checkauthlocal()">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Selezionando questa opzione si attribuisce alla network application e quindi ai relativi controllere la facolta' di 
+				assegnare i network address alle ESL. Altrimenti l'assegnazione dei network address verra' effettuata dal backend 
+				via comunicazione con il server, che e' la via tradizionale.
+				Questa opzione richiede l'abilitazione dell'accesso in scrittura alla tabella esls (vedi sezione database).
+				In generale per entrambi i metodi di autorizzazione si hanno le seguenti limitazioni
+				<ol>
+					<li>Autorizzazione centralizzata: fino a <b>65532</b> ESLS in totale</li>
+					<li>Autorizzazione locale: fino a 65532 ESLS per accentratore, per un minimo di 65532 x 15 = <b>982980</b> ESLs</li>
+				</ol> 
+			</span>
+		</td>
+	</tr>
+		
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left"><b>Correzione automatica dei tempi</b> dell'accentratore</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="checkbox" name="autocorrectTime" id="autocorrectTime" checked="false">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Attivando questa opzione, verra' inviato un comando di set-time al coordinator
+				ogni volta che verra' rilevata una ESL con un tempo non allineato in fase di acknowledge del
+				price update. Da usare per rendere più affidabile la propagazione dei tempi nel network.
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left"><b>Persistenza del buffer</b> dei messaggi in uscita</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="checkbox" name="persistentPriceUpdate" id="persistentPriceUpdate" checked="false" value="">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Attivando questa opzione non verranno persi i messaggi in uscita 
+				del buffer eseguendo un riavvio dell'applicazione. Necessaria per 
+				non perdere i price update in fase di aggiornamento
+				durante lo shutdown dell'applicazione.
+			</span>
+		</td>
+	</tr>
+
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left">Numero massimo di <b>tentativi</b> di invio <b>price update</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<select name="maxPriceUpdateRetry" id="maxPriceUpdateRetry">
+				<option value="1">1</option>
+				<option value="2">2</option>
+				<option value="3">3</option>
+			</select>
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Impostare qui il numero massimo di resubmit del price 
+				update in caso di fallimento,
+				Il valore di default e' 3.
+			</span>
+		</td>
+	</tr>
+		
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left">
+			<b>Numero di slot</b> usate di default per le richieste 
+			di <b>stato delle ESL</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<select name="status.request.maxbuf" id="status.request.maxbuf">
+				<option value="1">1</option>
+				<option value="2">2</option>
+				<option value="3">3</option>
+				<option value="4">4</option>
+				<option value="5">5</option>
+				<option value="6">6</option>
+				<option value="7">7</option>
+				<option value="8">8</option>
+				<option value="9">9</option>
+				<option value="10">10</option>
+				<option value="11">11</option>
+				<option value="12">12</option>
+				<option value="13">13</option>
+				<option value="14">14</option>
+				<option value="15">15</option>
+			</select>
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Specificare qui il numero massimo di slot utilizzabili 
+				quando si esegue una richiesta di status globale o di un subset
+				di ESL. Il valore massimo e 15, di norma non dovrebbe superare 
+				le 7 unita'. Questo parametro viene ignorato se impostato nella 
+				richiesta <b>XML</b> del server (parametro <b>maxBuf</b>) 
+			</span>
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left">Numero massimo di <b>trasmissioni</b> del <b>firmware upgrade</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<select name="firmware.transmission" id="firmware.transmission">
+				<option value="1">1</option>
+				<option value="2">2</option>
+				<option value="3">3</option>
+			</select>
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Impostare qui il numero di cicli di trasmissione da completare per 
+				l'upgrade del firmware delle ESL. Il valore di default e' 3.
+			</span>
+		</td>
+	</tr>
+
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left">Disabilita header check del <b>firmware upgrade</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="checkbox" name="firmware.nocheck" id="firmware.nocheck" checked="false">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Barrare la casella se si intende disabilitareil controllo delle informazioni di header
+				del file di firmware upgrade in fase di upload sulla network application.
+				<br><br>
+				<b style="color: darkRed;">IMPORTANTE: disabilitare solo in ambiente di sviluppo</b> 
+			</span>
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left">Disabilita <b>resubmit del firmware upgrade</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="checkbox" name="skipEslFirmwareCheck" id="skipEslFirmwareCheck" checked="false">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Se si abilita il resubmit, verrà inizializzata una nuova trasmissione del firmware ogni volta che<br>
+				le ESL riportano una versione di firmware non corretta nel messaggio di status e non ci sono<br>
+				upgrade in corso.
+			</span>
+		</td>
+	</tr>
+	
+	
+</table>
+
+</div>
+
+<!-- 
+	// ///////////////////////////////////////////////////////////////////////////  
+	//
+	// NETWORK
+	//
+	// /////////////////////////////////////////////////////////////////////////// 
+	-->
+	
+<div id="network" style="display: block">
+
+<table cellspacing="0" cellpadding="5" style="font-size: 10px; width: 900px;" id="networkTable">
+
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left" colspan="2" style="background: #f0f0f0;"><a name="dynanet" style="font-weight: bolder; color: black; text-decoration: none;">RILEVAMENTO AUTOMATICO</a></td>
+		<td class="tabBorderRight" valign="top" align="right" style="background: #f0f0f0;">
+			&nbsp;
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left">Abilita il <b>Rilevamento Automatico</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="checkbox" name="discovery" id="discovery" checked="false">
+			<input type="hidden" name="discovery.allowedchannels" value="12,13,14,15,16,17,18,19,20,21,22,23,24,25,26">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Abilita la ricerca automatica degli HUB attraverso la <b>UDP Discovery</b>.
+				Verranno  rilevati tutti gli hub di rete che inviano i propri dati identificativi in broadcast
+				non sara' necessario configurare manualmente gli accentratori.
+				Se si intende procedere con la configurazione manuale andare nella 
+				<a href="#staticnet" style="font-weight: normal; font-size: 10px; text-decoration: none;">prossima sezione</a>. 
+				La configurazione automatica di questa sezione e la configurazione manuale possono convivere, ma
+				i puntamenti virtuali configurati manualmente hanno priorita' sugli altri, nel senso che 
+				se verra' rilevato automaticamente un coordinator su una porta virtuale gia' configurato manualmente si
+				useranno le impostazioni definite nella configurazione manuale. 
+			</span>
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left"><b>Porta</b> utilizzata del listener</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="text" name="hubBroadcastPort" id="hubBroadcastPort" value="" style="text-align: right; width: 80px;">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				La porta UDP utilizzata per la discovery, di default e' 55559.
+			</span>
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left"><b>Canali consentiti</b> per la discovery</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<div id="broadcastchannels"></div>
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Specificare qui la lista dei canali consentiti sugli accentratori rilevati
+				attraverso il meccanismo di discovery.
+			</span>
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left"><b>Firewall</b> sugli accentratori</td>
+		<td class="tabBorderNone" valign="top" align="left">
+			<b>Policy di default</b><br/><br/>
+			<label><input type="radio" name="discoverypolicy" id="discovery.policy.deny" value="deny"> Nega connessioni</label><br/>
+			<label><input type="radio" name="discoverypolicy" id="discovery.policy.allow" value="allow" checked="true"> Permetti connessioni</label><br/><br/>
+			<b>Eccezioni</b><br>
+			<input type="text" value="10.5.5.*" style="width: 150px; font-size: 10px;" id="ipexctext" 
+					onkeypress="if (event.keyCode == 13) add_exclusion(this.value);">
+			<select size="5" style="width: 150px; font-size: 10px;" id="ipexc" multiple="on" onkeydown="remove_exclusions()">
+			</select>
+			<br>&nbsp;
+			<input type="hidden" name="discovery.policy" id="discovery.policy" value="">
+			<input type="hidden" name="discovery.ipallow" id="discovery.ipallow" value="">
+			<input type="hidden" name="discovery.ipdeny" id="discovery.ipdeny" value="">
+			
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Specificare la policy adottata per lo sbarramento delle connessioni se richiesto.
+				Se non si vuole consentire la connessione con tutti gli hub, occorre selezionare gli IP
+				consentiti scegliendo prima la policy di accesso predefinito (negare o consentire) e poi
+				aggiungere le eccezioni.
+				Aggiungere a mano uno o più IP address o gruppo di IP. Per specificare un gruppo usare il 
+				carattere *.
+				Per esempio 10.5.5.* significa tutti gli IP della subnet 10.5.5.0/24. Usare pero' le seguenti prescrizioni				
+				<ol style="text-align: left;">
+					<li><b>NOTE:</b></li>
+					<li>il carattere * funziona solo se posto come ultimo digit. Il validatore impedisce
+						l'inserimento di patterns di ip non validi</li>
+					<li>per aggiungere un elemento premere <b>INVIO</b> dalla casella di testo</li>
+					<li>per rimuovere ip dalla lista selezionare l'elemento e premere il tasto <b>DEL</b></li>
+				</ol>
+			</span>			
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left" colspan="2" style="background: #f0f0f0;">
+			<a name="staticnet" style="font-weight: bolder; color: black; text-decoration: none;">CONFIGURAZIONE MANUALE (STATICA)</a></td>
+		<td class="tabBorderRight" valign="top" align="right" style="background: #f0f0f0;">
+			&nbsp;
+		</td>
+	</tr>
+	
+	<tr>
+	
+		<td valign="top" align="left" class="tabBorderLeft">
+			
+			<input type="button" value="Nuovo accentratore" 
+					onclick="add_acc('tcp', '127.0.0.1', '55550', '15', '12,13,14,15,16,17,18,19,20,21,22,23,24,25,26')">
+			
+		</td>
+		
+		<td class="tabBorderRight" colspan="2" align="left">
+		
+			<h5>Istruzioni per configurare manualmente un Accentratore.</h5>
+				
+			<span style="font-family: Arial; font-size: 10px">
+				
+				Selezionare prima il driver della porta dalla combo a sinistra, usando le seguenti prescrizioni: 
+				
+				<ol>
+					<li><b>RXTX</b> se l'accentratore e' un coordinator attaccato alla porta <b>USB</b> su OS <b>Windows o MAC</b></li>
+					<li><b>FILE</b> se l'accentratore e' un coordinator attaccato alla porta <b>USB</b> su OS <b>Linux</b> o derivato</li>
+					<li><b>TCP</b> se l'accentratore e' un coordinator su porta virtuale di un T3 o T2</li>
+					<li><b>SSL</b> se l'accentratore e' un coordinator su porta virtuale di un T3 o T2 abilitato per le connessioni sicure</li>
+				</ol>
+				Nei primi due casi specificare il percorso della porta USB sulla casella di testo successiva, su windows e' una porta COM, per es. <i>COM3</i>, su Linux e' il nodo di una porta seriale
+				per es. /dev/ttyS0, su MAC e' un nodo creato appositamente dal sistema operativo dopo avere inserito il coordinator da cercare nel filesystem sotto /dev.
+				<br>
+				Se si sta configurando una porta virtuale occorre specificare nella casella di testo l'IP address o hostname dell'hub su cui e' ospitato il coordinator 
+				e nella textbox successiva la porta (TCP o SSL) del socket bridge utilizzato dallo stesso hub.
+				Nel caso SSL assicurarsi di avere i certificati correttamente installati sul sistema e sull'hub che ospita il coordinator.						
+			</span>
+			
+		</td>
+			
+	</tr>
+	
+</table>
+
+</div>
+
+<!-- 
+	// ///////////////////////////////////////////////////////////////////////////  
+	//
+	// SERVER
+	//
+	// /////////////////////////////////////////////////////////////////////////// 
+	-->
+	
+<div id="server" style="display: block">
+
+<table cellspacing="0" cellpadding="5" style="font-size: 10px; width: 900px;">
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left" colspan="2" style="background: #f0f0f0;">
+			<a name="staticnet" style="font-weight: bolder; color: black; text-decoration: none;">CONFIGURAZIONE CONNETTORE SERVER</a></td>
+		<td class="tabBorderRight" valign="top" align="right" style="background: #f0f0f0;">
+			&nbsp;
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left"><b>Tipologia di connessione</b> al backend</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<select name="server.connector" id="server.connector">
+				<option value="">Nessuna connessione (disabilitata)</option>
+				<option value="activemq">ActiveMQ Native Broker</option>
+				<option value="jms">Generic JMS Broker</option>
+				<option value="rabbitmq">RabbitMQ Erlang Broker</option>
+				<option value="inprocess">In-Process Queue</option>				
+			</select>
+			<input type="hidden" name="upstream.disabled" id="upstream.disabled" value="false">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				<b>Tipologia del connettore server</b>, da usare a seconda dello scenario utilizzato le seguenti opzioni:
+				<ol style="text-align: left;">
+					<li>ActiveMQ se si intende usare solo <b>code (queues)</b> su broker ActiveMQ (Default)</li>
+					<li>Generic JMS per usare topics o queues su un generico Broker JMS (anche ActiveMQ)</li>
+					<li>RabbitMQ per usare queues su broker Rabbit, ATTENZIONE: occorre avere installato motore Erlang sul sistema per utilzzare questa opzione</li>
+					<li>In-Process per usare una coda all'interno della JVM della Network Application, da usare solo se il sistema non deve interagire con un backend e possiede un sistema di consumazione interno 
+						alla stesssa JVM con una estensione opportunamente configurata</li>
+				</ol>
+				Si puo' anche disabilitare la tipologia di connessione, perdendo le funzionalita' di comunicazione con altri scenari come il backend.
+				Si possono usare le topic se gli eventi del network devono consumati e i comandi possono provenire da piu' sistemi server. Questa opzione
+				e' stata introdotta per rendere possibile l'integrazione con <b>cluster</b> o <b>network</b> di brokers.
+			</span>
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left" colspan="2">
+		<a name="connectors" style="font-weight: normal; font-size: 12px;">Parametri di <b>connessione verso il broker</b></a>
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				I seguenti parametri di connessione al broker sono significativi solo se le tipologie 
+				sopra specificate sono <b>ActiveMQ</b> o <b>JMS</b>. Se si intende
+				usare <i>Rabbit</i> occorre modificare manualmente il file <i>rabbitmq.properties</i> nella 
+				cartella di configurazione dell'applicazione (./conf/).
+			</span>
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left"><b>Broker URL</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="text" name="server.url" id="server.url" value="">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Url del broker nel formato richiesto dal client ActiveMQ
+				le connessioni possono essere in  JVM, TCP o SSL, ecco dei rispettivi esempi
+				<ol style="text-align: left;">
+					<li>vm://S5NET</li>
+					<li>tcp://127.0.0.1:61616</li>
+					<li>ssl://127.0.0.1:61616</li>
+				</ol>
+				Se si usa il broker embedded (come di default, vedere avanti) il connettore default è in JVM (vm://S5NET)
+				in quanto non c'è bisogno di comunicazione a livello di trasporto di rete 
+				tra broker e client della network application. Infatti in questo caso vivono entrambi nello stesso processo.
+				Per la configurazione del broker embedded si rimanda alla 
+				<a href="#embeddedbroker" style="font-weight: normal; font-size: 10px;">Configurazione Embedded ActiveMQ Broker</a>.				
+			</span>
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left">Nome della <b>coda in entrata (downstream</b>)</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="text" name="server.downqueue" id="server.downqueue" value="">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Il nome della coda dei comandi provenienti dal server.
+				Se il connettore e' activemq nativo specificare solo il nome della coda
+				Se il connettore è un <b>JMS</b> specificare se si tratta di una topic o una queue con il seguente
+				formato: 
+				<ol style="text-align: left;">
+					<li>topic://foo.mytopic</li>
+					<li>queue://foo.myqueue</li>
+				</ol>				
+			</span>
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left">Nome della <b>coda in uscita (upstream</b>)</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="text" name="server.upqueue" id="server.upqueue" value="">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Il nome della coda dei messaggi destinati alla consumazione del server e contenenti le informazioni degli eventi del network.
+				Valgono le stesse prescrizioni sopra specificate per la coda in entrata.
+			</span>
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left" colspan="2" style="background: #f0f0f0;">
+			<a name="staticnet" style="font-weight: bolder; color: black; text-decoration: none;">CONFIGURAZIONE IN-PROCESS BROKER</a></td>
+		<td class="tabBorderRight" valign="top" align="right" style="background: #f0f0f0;">
+			&nbsp;
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" colspan="2" align="left">
+			<a name="embeddedbroker" style="font-weight: normal; font-size: 12px;">Configurazione <b>Embedded ActiveMQ Broker</b></a></td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Incomincia la parte dedicata ai parametri per la configurazione dell'ActiveMQ Broker Embedded.
+				Assicurarsi che la tipologia dei connettori specificata sopra sia <b>ActiveMQ o JMS</b>, se
+				si intende configurare questa parte.
+			</span>
+		</td>
+	</tr>
+
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left">
+			<b>Attivazione Broker</b>
+		</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="checkbox" name="activemq.server" id="activemq.server" checked="false">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Attiva o disattiva il task che esegue il servizio ActiveMQ Broker.
+				Disattivare solo nel caso in cui ci si voglia appoggiare a broker o cluster o network di broker esterni gia' 
+				configurati e funzionanti. Da disattivare anche quando si usa una connessione RabbitMQ.
+			</span>
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left"><b>Connettore</b> broker</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="text" name="activemq.connector" id="activemq.connector" value="">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Configura il trasporto di rete del broker embedded (TCP o SSL)
+				che permette l'accesso da parte del backend alla produzione e alla consumazione dei 
+				messaggi attraverso il client dedicato. Di default viene impostato a <b>tcp://127.0.0.1:61616</b>
+				Se si intende rendere accessibile il broker da remoto usare un binding diverso, per esempio
+				per ascoltare su tutte le interfacce di rete fisiche e virtuali: <b>tcp://0.0.0.0:61616</b>.
+				Se si cambia indirizzo di rete, assicurarsi che i rispettivi client di backend vengano
+				opportunamente puntati.
+			</span>
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left">Attivazione servizi <b>JMX</b> del broker</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="checkbox" name="activemq.usejmx" id="activemq.usejmx" checked="">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Attiva i servizi JMX del broker sulla porta TCP di default. Si utilizza 
+				per estendere le funzionalita' del broker, come per esempio il controllo delle
+				code attraverso i client JMX (il JMX usa la porta TCP 1099). Di norma non
+				utilizzato per non appesantire il broker embedded.
+			</span>
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left">Usa <b>persistenza broker</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="checkbox" name="activemq.persistent" id="activemq.persistent" checked="true">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Attiva la persistenza del broker embedded.
+				<br>
+				<br>
+				<b>IMPORTANTE: Usare questa opzione per evitare
+				di far perdere al backend le rejoin e gli acknowledge dei price update
+				in fase di shutdown</b>. Cio' puo' comportare la perdita delle 
+				informazioni di associazione Coordinator - ESL se si sta effettuando una rejoin 
+				globale durante lo shutdown, con la conseguente incapacita' al riavvio successivo
+				di inviare i price update a molte ESL. 
+				<b>QUINDI DI NORMA QUESTA OPZIONE ANDREBBE ATTIVATA.</b> 
+				Lo svantaggio della persistenza e' nel rallentamento delle operazioni di scodamento 
+				da ambo i lati, che risulta tanto significativo quanto elevata e' la mole di messaggi 
+				presente nelle code.
+			</span>
+		</td>
+	</tr>
+	
+	<!--
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left"><b>Directory dati</b> della persistenza del broker</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="text" name="activemq.persistence.dir" id="activemq.persistence.dir" value="" style="width: 200px;">
+		</td>
+		<td class="tabBorderRight" valign="top" align="right">
+			<span style="font-family: Arial; font-size: 10px">
+				Configura la directory dei dati di persistenza del broker se attivata l'opzione precedente.
+				Assicurarsi che l'owner del processo JVM abbia i permessi di scrittura su questa directory.
+			</span>
+		</td>
+	</tr>
+	-->
+	
+</table>
+
+</div>
+
+<!-- 
+	// ///////////////////////////////////////////////////////////////////////////  
+	//
+	// DATABASE
+	//
+	// /////////////////////////////////////////////////////////////////////////// 
+	-->
+	
+<div id="database" style="display: block">
+
+<table cellspacing="0" cellpadding="5" style="font-size: 10px; width: 900px;">
+
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">Accesso alla tabella <b>ESL</b> in <b>scrittura</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="checkbox" name="persistence" id="persistence" checked="false" 
+					value="rw" onclick="checkauthwrite()" onkeypress="checkauthwrite()">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Attivare questa opzione se e' necessario accedere alla tabella delle ESL in modalita' scrittura.
+				Disattivato di default, <b>non deve mai essere disattivata se si usa l'autorizzazione centralizzata
+				delle ESL, cioe' quando gli short address delle ESL sono assegnati dal server </b>.
+				<br><br>
+				<b style="color: darkRed;">IMPORTANTE: non attivare questa opzione se si usa un database condiviso con il backend!</b>				
+				<br><br>
+				<b style="color: darkBlue;">NOTA: opzione obbligatoria nel caso in cui si utilizzi una autorizzazione LOCALE (vedi 
+				sezione 'Generali'), Quindi anche con l'autorizzazione automatica che e' un caso speciale di quest'ultima.</b>				
+				<br><br>
+				<i>
+				Al momento l'accesso in scrittura viene usato solo in due circostanze:
+				<ol style="text-align: left;">
+					<li>Si usa un database dedicato esclusivamente alla Network Application</li>
+					<li>In modalita' di bugfixing con l'opzione 'autorizzazione automatica' attivata</li>
+				</ol>
+				</i>
+			</span>
+		</td>
+	</tr>
+
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left"><b>Autorizzazione automatica</b> per tutte le ESL</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="checkbox" name="authorizeAll" id="authorizeAll" checked="true" onclick="checkauthall()">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Usare questa opzione, per autorizzare automaticamente tutte le ESL a effettuare 
+				join su sistema. Questa opzione richiede la disattivazione dell'accesso alla tabella 
+				delle ESL in modalita' sola lettura per consentire la registrazione automatica di queste ultime.
+				<br><br>
+				<b style="color: darkRed;">IMPORTANTE: da usare solo in ambiente di test e bugfixing.</b>
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left" colspan="2">
+			&nbsp;
+		</td>
+		<td class="tabBorderRight" valign="top" align="right">
+			&nbsp;
+		</td>
+	</tr>
+
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">
+			<b>Parametri JDBC</b>
+		</td>
+		<td class="tabBorderNone" valign="top">
+		<span style="font-family: Arial; font-size: 10px">
+			Riportare qui sotto i parametri necessari 
+			per stabilire la connessione con il database 
+			per la persistenza delle <b>ESLs</b> e dei <b>Price Updates</b>.
+			Le tabelle coinvolte sono: 
+			<ol style="text-align: left;">
+				<li>esls</li>
+				<li>pricesList</li>
+				<li>eslTypes</li>				
+			</ol>			
+			</span>
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<ol style="text-align: left;">
+				<li><i>suggerimenti:</i></li>
+				<li><a style="font-weight: normal; font-size: 10px;" href="javascript:populateMSSQL()">usa template MSSQL</a></li>
+				<li><a style="font-weight: normal; font-size: 10px;" href="javascript:populateHSQLDB()">usa template HSQLDB</a></li>
+			</ol>			
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left"><b>Driver</b></td>
+		<td class="tabBorderRight" valign="top" align="left" colspan="2">
+			<input type="text" name="jdbc.driver" id="jdbc.driver" style="width: 300px;" value="">
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left"><b>Url</b></td>
+		<td class="tabBorderRight" valign="top" align="left" colspan="2">
+			<input type="text" name="jdbc.url" id="jdbc.url" style="width: 400px;" value="">
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left"><b>Username</b></td>
+		<td class="tabBorderRight" valign="top" align="left" colspan="2">
+			<input type="text" name="jdbc.username" id="jdbc.username" style="width: 100px;" value="">
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left"><b>Password</b></td>
+		<td class="tabBorderRight" valign="top" align="left" colspan="2">
+			<input type="password" name="jdbc.password" id="jdbc.password" style="width: 100px;" value="">
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">&nbsp;</td>
+		<td class="tabBorderNone" valign="top" align="left">
+			<input type="button" name="submit.checkconn" id="submit.checkconn" onclick="testconn()" 
+				style="border: 1px solid darkBlue; background: white; font-size: 10px; font-weight: normal; color: darkBlue;" 
+				value="Verifica la connessione">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<img border="0" src="images/dbalert.png" id="dbalert" style="display: none;" height="30">
+			&nbsp;
+		</td>
+	</tr>
+
+</table>
+
+</div>
+
+<!-- 
+	// ///////////////////////////////////////////////////////////////////////////  
+	//
+	// EXTENSIONS
+	//
+	// /////////////////////////////////////////////////////////////////////////// 
+	-->
+
+<div id="ext" style="display: block">
+
+<table cellspacing="0" cellpadding="5" style="font-size: 10px; width: 900px;">
+
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left" colspan="2" style="background: #f0f0f0;"><b>SERVIZIO DI SHUTDOWN REMOTO</b></td>
+		<td class="tabBorderRight" valign="top" align="right" style="background: #f0f0f0;">
+			&nbsp;
+		</td>
+	</tr>	
+
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">Attivazione <b>Shutdown Remoto</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="checkbox" name="plugin.1" id="plugin.1" checked="false" value="com.s5tech.net.plugin.ShutdownSocket">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Da attivare per dare la possibilita' ai servizi di backend di comandare uno shutdown
+				regolare della network application. 
+				<br><br>
+				<b style="color: darkRed;">IMPORTANTE: disattivando questa opzione i servizi di backend incorreranno in un arresto critico in fase di stop and go ...</b>
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left"><b>Porta</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="text" style="width: 70px; text-align: right;" name="shutdown.port" id="shutdown.port" value="9000">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px;">
+				La porta TCP utilizzata, di default e' 9000, cambiandola occorrre modificare anche la configurazione
+				del client di shutdown dei servizi di backend (nel file BackendServices.ini).
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left" colspan="2" style="background: #f0f0f0;"><b>SERVIZIO DI TIME SERVER</b></td>
+		<td class="tabBorderRight" valign="top" align="right" style="background: #f0f0f0;">
+			&nbsp;
+		</td>
+	</tr>	
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left">Attivazione <b>Time Server</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="checkbox" name="plugin.2" id="plugin.2" checked="false" value="com.s5tech.net.plugin.RDateServer">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Attiva un time server ospitato dalla network application.
+				Da utilizzare quando ci sono reti che non hanno accesso a Internet e si stanno 
+				utilizzando come accentratori degli hubs nella LAN.
+				In questo caso assicurarsi di andare a modificare su tutti gli hubs di rete con un client SSH (e.g.: Putty)
+				il parametro RDATESERVER impostandolo sull'indirizzo IP della macchina su cui gira 
+				la network application (di norma quella su cui e' ospitata questa pagina html).
+				Il parametro RDATESERVER negli hub normalmente si trova o nel file <b>/etc/init.d/s5-custom-startup.sh</b>
+				o nel file <b>/etc/s5.config<b> a seconda del firmware hub utilizzato.
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left"><b>Porta</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="text" style="width: 70px; text-align: right;" name="dateserver.port" id="dateserver.port" value="37">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px;">
+				La porta TCP utilizzata di default e' quella del server RDATE: 37.
+				Se si cambia assicurarsi di fare cio' anche sugli hub, 
+				vedere nota sopra relativa al parametro RDATESERVER sugli hubs.
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left" colspan="2" style="background: #f0f0f0;"><b>WEB SERVER (NON DISATTIVABILE)</b></td>
+		<td class="tabBorderRight" valign="top" align="right" style="background: #f0f0f0;">
+			<span style="font-family: Arial; font-size: 10px">
+			&nbsp;</span>
+			<input type="hidden" name="plugin.0" value="com.s5tech.net.plugin.WebServer">
+			<input readonly="true" type="text" name="webapp.root" id="webapp.root" value="" style="color: #d0d0d0;">
+			<input readonly="true" type="text" name="webserver.commandLine" id="webserver.commandLine" value="" style="color: #d0d0d0;">			
+		</td>
+	</tr>	
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left" colspan="2">
+			<span style="font-family: Arial; font-size: 10px">
+			<b style="color: darkBlue;">NOTA: Per disattivare il web server occorre aprire con un editor di testo il file do configurazione (s5.conf o system.properties sotto <i>./conf</i>) e commentare l'opzione di attivazione del web server 
+			anteponendo il carattere # alla riga che riporta la scritta <b><i>plugin com.s5tech.net.plugin.WebServer</i></b>
+			</b> 
+			</span>
+		</td>
+		<td class="tabBorderRight" valign="top" align="left" >
+		&nbsp;
+		</td>		
+	</tr>	
+			
+</table>
+
+</div>
+
+<!-- 
+	// ///////////////////////////////////////////////////////////////////////////  
+	//
+	// LOGGER
+	//
+	// /////////////////////////////////////////////////////////////////////////// 
+	-->
+	
+<div id="logger" style="display: block">
+
+<table cellspacing="0" cellpadding="5" style="font-size: 10px; width: 900px;">
+
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">Verbosita' logger <b>PRINCIPALE</b></td>
+		<td class="tabBorderNone" valign="top" align="left">
+			<select name="logger.application" id="logger.application">
+				<option value="TRACE">Massima (trace e debug)</option>
+				<option value="INFO">Media (info)</option>
+				<option value="WARNING">Solo warnings e errori</option>
+				<option value="OFF">Disattivato</option>
+			</select>				
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Seleziona il livello di verbosita' del logger applicativo centrale. I dati saranno raccolti nel file 
+				<i>logs/application.log</i>. Per rebndere efficaci le finzionalita' di analisi dei log files portare questo livello a verbosita' massima
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left" colspan="2"><b>Attiva logger speciali:</b></td>
+		<td class="tabBorderRight" valign="top" align="left">
+			&nbsp;
+		</td>
+	</tr>
+
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">XML SERVER</td>
+		<td class="tabBorderNone" valign="top" align="left">
+			<input type="checkbox" name="logger.xmlserver" id="logger.xmlserver" checked="false" value="TRACE">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Attiva il tracciamento dei messaggi XML da e verso server. I dati saranno raccolti nel file 
+				<i>logs/xmlserver.log</i>
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">SERIALFRAMING</td>
+		<td class="tabBorderNone" valign="top" align="left">
+			<input type="checkbox" name="logger.serialframing" id="logger.serialframing" checked="false" value="TRACE">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Attiva il tracciamento dei dati in I/O sulla porta seriale. I dati saranno raccolti nel file 
+				<i>logs/serialframing.log</i>
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">SCANPROBES</td>
+		<td class="tabBorderNone" valign="top" align="left">
+			<input type="checkbox" name="logger.scanprobes" id="logger.scanprobes" checked="false" value="TRACE">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Attiva il tracciamento di tutti gli scanprobes delle ESL in un file differenziato. I dati saranno raccolti nel file 
+				<i>logs/scanprobes.log</i>
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">HISTORY</td>
+		<td class="tabBorderNone" valign="top" align="left">
+			<input type="checkbox" name="logger.history" id="logger.history" checked="false" value="TRACE">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Attiva il tracciamento su file dedicato degli eventi applicativi critici. I dati saranno raccolti nel file 
+				<i>run/data/history.log</i>
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">WEB ACCESS</td>
+		<td class="tabBorderNone" valign="top" align="left">
+			<input type="checkbox" name="logger.webaccess" id="logger.webaccess" checked="false" value="TRACE">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Attiva il tracciamento degli accessi al web server. I dati saranno raccolti nel file 
+				<i>logs/webaccess.log</i>
+			</span>
+		</td>
+	</tr>
+		
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">POLICY di <b>backup</b></td>
+		<td class="tabBorderNone" valign="top" align="left">
+			Dimensione massima file:
+			<select name="log.filesize" id="log.filesize">
+				<option value="100KB">100 KB</option>
+				<option value="1MB">1 MB</option>
+				<option value="5MB">5 MB</option>
+				<option value="10MB">10 MB</option>
+				<option value="20MB">20 MB</option>		
+			</select>
+			<br>
+			Rolling size: 
+			<select name="log.rollingsize" id="log.rollingsize">
+				<option value="1">1</option>
+				<option value="2">2</option>
+				<option value="3">3</option>
+				<option value="4">4</option>
+				<option value="5">5</option>
+				<option value="6">6</option>
+				<option value="7">7</option>
+				<option value="8">8</option>
+				<option value="9">9</option>
+				<option value="10">10</option>
+				<option value="11">11</option>
+				<option value="12">12</option>
+				<option value="13">13</option>
+				<option value="14">14</option>
+			</select>			
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Definisce le policy di backup per tutte le tipologie di logger sopra attivate.
+				Rolling size e' il numero massimo di backup dei file di log da mantenere. Entrambe 
+				le impostazioni verranno applicate a tuttte le tipologie di logger
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">Output <b>Directory</b></td>
+		<td class="tabBorderNone" valign="top" align="left">
+			<input type="text" name="log.dir" id="log.dir" value="">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Dove verranno salvati i files di log (di default './log')
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">Output <b>Directory</b></td>
+		<td class="tabBorderNone" valign="top" align="left">
+			<input type="text" name="log.archivedir" id="log.archivedir" value="">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Dove verranno salvati i files di backup del logger
+			</span>
+		</td>
+	</tr>
+	
+
+</table>
+
+</div>
+		
+<!-- 
+	// ///////////////////////////////////////////////////////////////////////////  
+	//
+	// ADVANCED PARAMETERS
+	//
+	// /////////////////////////////////////////////////////////////////////////// 
+	-->
+	
+<div id="advanced" style="display: none">
+
+<table cellspacing="0" cellpadding="5" style="font-size: 10px; width: 900px;">
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left"><b>Azione</b> associata alla <b>rimozione delle ESL</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<select name="removeAction" id="removeAction">
+				<option value="none">nessuna</option>
+				<option value="leave">leave</option>
+				<option value="kill">kill</option>
+			</select>
+		</td>	
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Specificare qui il tipo di azione da intraprendere
+				quando si rimuove una ESL. Di default non si
+				prende iniziativa. Altrimenti si puo' decidere
+				di inviare una leave o una kill per disassociare
+				fisicamente l'ESL dal sistema. 
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left"><b>Abilita</b> l'invio dei comandi <b>Leave e Kill</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="checkbox" name="enableleave" id="enableleave" checked="false">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Disattivando questa opzione, le ESL non verranno mai killate
+				o sganciate dal sistema tramite i relativi comandi,
+				inoltre la precedente opzione (azione associata alla rimozione delle ESL) 
+				verra' ignorata.
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">Invia notifiche di <b>ESL non autorizate</b> al server</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="checkbox" name="eslevent.unauthorized" id="eslevent.unauthorized" checked="false">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Se attivata, verranno notificati al server tutte le richieste
+				delle ESL non autorizzate dal sistema. Di default e' disattivata.
+				<br><br><b style="color: darkRed;">IMPORTANTE: opzione da usare solo in ambienti di test o bugfixing!</b>
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">Invia notifiche di scansione canale delle ESL (<b>scanprobes</b>)</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="checkbox" name="eslevent.scanprobe" id="eslevent.scanprobe" checked="false">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Se attivata, verranno notificati al server tutti gli scanprobes
+				delle ESL, questo comportera' un notevole traffico sul server. Da non
+				abilitare mai in sistemi di produzione. Di default e' disattivata.
+				<br><br><b style="color: darkRed;">IMPORTANTE: opzione da usare solo in ambienti di test o bugfixing!</b>
+			</span>
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left">Intervallo aggiornamento del <b>Time setter</b></b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<select name="timesetter.interval" id="timesetter.interval">
+				<option value="600">10 min.</option>
+				<option value="1800">30 min.</option>
+				<option value="3600">1 h.</option>
+				<option value="7200">2 h.</option>
+				<option value="21600">6 h.</option>
+				<option value="86400">24 h.</option>
+			</select>
+		</td>	
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Intervallo di tempo tra un set time del 
+				coordinator e il successivo. Il set time verra' 
+				inviato all'avvio del controller dedicato e successivamente 
+				a intervalli regolari qui specificati. Di default e' impostato a 2h.
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">Mantieni <b>price upate per le ESLs offline</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="checkbox" name="keepMessagesWhenOffline" id="keepMessagesWhenOffline" checked="false">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Se attivata questa opzione, gli accentratori offline per i quali risultano agganciate le ESL 
+				a cui viene mandato un prezzo, manterranno i dati fino al successivo ritorno online. In caso 
+				contrario (disattivando l'opzione) verra' notificato un acknowledge di tipo fail '<b>NoRoute</b>'
+				Di default il noroute attivo e quindi l'opzione disattivata.
+			</span>
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left">
+			<b>Coordinator</b> keep-alive <b>Timeout</b>
+		</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<select name="timeoutCoordinator" id="timeoutCoordinator">
+				<option value="-1">Disattiva Keep-alive</option>
+				<option value="20">1 beacon (> 16 sec)</option>
+				<option value="35">2 beacons (> 32 sec)</option>
+				<option value="50">3 beacons (> 48 sec)</option>
+				<option value="65">4 beacons (> 63 sec)</option>
+				<option value="160">10 beacons (> 2'37")</option>
+			</select>
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Specificare qui tempo massimo di persistenza dei coordinator nella relativa
+				tabella dei 'keep-alive'. Se non si riceveranno informazioni dal
+				coordinator per un tempo maggiore a quello specificato, l'accentratore'
+				verra' posto in stato 'offline' e notificato l'evento al server.
+				<b>Valore consigliato: 2 beacon</b>. Se disattivato gli 
+				accentratori non andranno mai offline per timeout (opzione da usare solo in 
+				fase di bugfixing).				
+			</span>
+		</td>
+	</tr>
+	
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left">
+			<b>Hub</b> keep-alive <b>Timeout</b>
+		<td class="tabBorderNone" valign="top" align="right">
+			<select name="timeoutHub" id="timeoutHub">
+				<option value="-1">Disattiva Keep-Alive</option>
+				<option value="35">1 broadcast (> 30 sec)</option>
+				<option value="65">2 broadcasts (> 1 minuto)</option>
+				<option value="95">3 broadcasts (> 1'30')</option>
+				<option value="125">4 broadcasts (> 2')</option>
+				<option value="350">10 broadcasts (> 5')</option>
+			</select>
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Specificare qui il tempo massimo di persistenza degli hubs nella
+				relativa tabella dei 'keep-alive'. Se non si riceveranno notifiche 
+				broadcast per un tempo superiore al valore specificato l'hub verra'
+				scaricato dalla lista e notificato l'evento al server.
+			</span>
+		</td>
+	</tr>
+		
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left"><b>Timeout di connessione</b> sulla porta seriale</td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="text" name="serialReaderConnectTimeout" id="serialReaderConnectTimeout" style="text-align: right; width: 70px;" value="10000">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Timeout in ms sulla connessione per tutte le porte seriali o virtuali.
+				Di default e' 10000 ms. Se in fase di connessione non si ha un handshaking 
+				prima di tale timeout la connessione risulterà fallita.<br>
+				<b>NOTA:</b> questo parametro puo' essere importante nelle connessioni a 
+				porte virtuali criptate in SSL in quanto l'handshaking puo' essere lungo.
+			</span>
+		</td>
+	</tr>
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">Dimensione massima del <b>frame di trasporto</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="text" name="EslTransportFrame.MAX_PDU_FRAGMENT_LENGTH" id="EslTransportFrame.MAX_PDU_FRAGMENT_LENGTH" style="text-align: right; width: 70px;" value="76">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Ridimensiona il frame utilizzato dal protocollo di trasmissione IEEE 802.15.4
+				Di regola deve essere <b>76</b>.
+				<br><br>
+				<b style="color: darkRed;">IMPORTANTE: opzione da usare solo in ambienti di sviluppo e test firmware!</b>
+			</span>
+		</td>
+	</tr>
+	
+	<!--
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">Tipi ESL grafiche con aggiornamento <b>incrementale</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="text" name="dotMatrixEslTypes" id="dotMatrixEslTypes" style="text-align: right; width: 160px;" value="">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Specificare qui in una lista separata da virgole (es.: 9, 10, 11 ...) i network esltypes numerici delle ESL
+				che rispondono hashcode di aggiornamento incrementale. Queste ESL ogni volta che vengono
+				fatte ripartire (per es. con un reset manuale da pulsante) e riportano un hashcode uguale a zero, 
+				vengono segnalate al server con un evento priceunknown per dare la la possibilità a quest'ultimo di 
+				rimandargli giù l'aggiornamento completo.				
+			</span>
+		</td>
+	</tr>
+	-->
+	
+	<tr>		
+		<td class="tabBorderLeft" valign="top" align="left">Numero massimo di <b>join per coordinator</b></td>
+		<td class="tabBorderNone" valign="top" align="right">
+			<input type="text" name="join.max" id="join.max" style="text-align: right; width: 60px;" value="">
+		</td>
+		<td class="tabBorderRight" valign="top" align="left">
+			<span style="font-family: Arial; font-size: 10px">
+				Specificare il numero massimo di ESLs che possono agganciarsi a ciascun coordinator.
+				Di default e' il numero massimo (65532). Da impostare per riequilibrare ambienti sbilanciati
+				con troppe rejoin verso determinati coordinators. Impostandolo il valore a 5000 per esempio
+				non si potranno mai avere piu' di 5000 esls associati ad ogni singolo coordinator.
+			</span>
+		</td>
+	</tr>
+
+	
+</table>
+
+</div>
+
+<!-- 
+	// ///////////////////////////////////////////////////////////////////////////  
+	//
+	// FOOTER
+	//
+	// /////////////////////////////////////////////////////////////////////////// 
+	-->
+
+<table cellspacing="0" cellpadding="5" style="width: 900px;">
+	<tr style="height: 40px; color: darkBlue;">
+	<td class="tabBorderBottomLeft" align="left">
+		&nbsp;
+	</td>
+	<td class="tabBorderBottom" align="right">&nbsp;		
+	</td>
+	<td class="tabBorderBottomRight" align="right">
+		<input type="submit" value="salva configurazione" name="submit.config">
+		<!--
+		<br>
+		<label style="font-weight: normal; color: darkRed;">riavvio automatico<input type="checkbox" value="true" name="config.restart" id="config.restart" checked="true"></label>
+		-->
+	</td>
+ </tr>
+</table>
+
+</form>
+
+<!--
+<pre id="debug.txt" style="font-name: Courier New; font-size: 10px;">
+</pre>
+-->
+
+</body>
+</html>

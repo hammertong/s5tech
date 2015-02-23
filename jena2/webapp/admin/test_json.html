@@ -1,0 +1,46 @@
+<html>
+<head>
+<link type="text/css" rel="stylesheet" href="css/default.css"/>
+<script type="text/javascript">
+
+function testJsonRequest()
+{
+	var o;
+	var url = document.getElementById("texturl").value;
+	
+	if (window.XMLHttpRequest)
+	{
+	  xhttp=new XMLHttpRequest();
+	}
+	else
+	{
+	  xhttp=new ActiveXObject("Microsoft.XMLHTTP");
+	}
+	xhttp.open("GET",url,false);
+	xhttp.setRequestHeader('Content-type','text/json');
+	xhttp.send("");
+	
+	var o = eval('( ' + xhttp.responseText + ' )');
+	
+	document.getElementById("response").innerHTML = xhttp.responseText;
+	
+	//alert(o.threads.length);
+}
+
+</script>
+</head>
+<body>
+
+<h3>Test JSON request</h3>
+
+<a href="index.html">back to menu</a><br>&nbsp;<br>
+
+<input type="text" id="texturl" value="../network/version">
+<input type="button" value="load json object ..." onclick="javascript:testJsonRequest()">
+
+<pre style="color: blue; font-family: Lucida console, Courier; font-size: 10px;" id="response">
+</pre>
+
+
+</body>
+</html>

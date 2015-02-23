@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry excluding="**/.svn/**" kind="src" path="WEB-INF/src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="WEB-INF/lib/commons-beanutils.jar"/>
+	<classpathentry kind="lib" path="WEB-INF/lib/commons-digester.jar"/>
+	<classpathentry kind="lib" path="WEB-INF/lib/commons-logging.jar"/>
+	<classpathentry kind="lib" path="WEB-INF/lib/commons-dbcp2-2.0.1.jar"/>
+	<classpathentry kind="lib" path="WEB-INF/lib/commons-pool2-2.2.jar"/>
+	<classpathentry kind="lib" path="WEB-INF/lib/struts.jar"/>
+	<classpathentry kind="var" path="WORKSPACE_ROOT/lib/jsp-2.1-glassfish-2.1.v20091210.jar"/>
+	<classpathentry kind="var" path="WORKSPACE_ROOT/lib/jsp-2.1-jetty-6.1.26.jar"/>
+	<classpathentry kind="var" path="WORKSPACE_ROOT/lib/jsp-api-2.1-glassfish-2.1.v20091210.jar"/>
+	<classpathentry kind="var" path="WORKSPACE_ROOT/lib/servlet-api-2.5-20081211.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

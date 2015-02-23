@@ -1,0 +1,93 @@
+
+<project name="webapp" default="jar" basedir=".">
+
+	<!--
+	<property name="jdk.home"  value="c:/jdk1.3"/>
+	-->	
+	
+	<property name="src.dir"    value="WEB-INF/src"/>	
+	<property name="build.dir"  value=".build"/>	
+	<property name="lib.dir"    value="WEB-INF/lib"/>
+	<property name="server.lib" value="../../lib"/>	
+
+	<path id="build.classpath">
+		<fileset dir="${server.lib}">
+			<include name="servlet-api-*.jar" />
+			<include name="jsp*.jar" />
+		</fileset>
+		<fileset dir="${lib.dir}">
+			<include name="*.jar" />			
+		</fileset>				
+	</path>
+	
+	<path id="runtime.classpath">
+		<fileset dir="${lib.dir}">
+			<include name="*.jar" />			
+		</fileset>				
+	</path>
+
+	<target name="clean">
+		<delete dir="${build.dir}" />		
+		<delete>
+			<fileset dir="${src.dir}" includes="**/*_jsp.java"/>
+		</delete>
+	</target>
+
+	<target name="prepare">		
+		<mkdir dir="${build.dir}" />		
+	</target>
+	
+	<target name="jspc" depends="prepare">
+		<taskdef classname="org.apache.jasper.JspC" name="jasper2" classpathref="build.classpath" />
+		<jasper2 validateXml="false"
+				uriroot="."
+				addWebXmlMappings="true"
+				webXmlFragment="WEB-INF/classes/jspc_web.xml"
+				outputDir="${src.dir}"
+				verbose="9" />		
+	</target>
+
+	<target name="compile" depends="jspc">
+		<javac includeantruntime="false" destdir="${build.dir}" deprecation="off" debug="true">
+			<classpath refid="build.classpath" />
+			<src path="${src.dir}" />
+		</javac>
+	</target>
+	
+	<target name="jar" depends="compile">	
+		<buildnumber file="build.number"/>		
+		<property file="build.number"/>		
+		<tstamp>
+			<format property="TIME_NOW" pattern="d-MMMM-yyyy HH:mm:ss" />
+		</tstamp>		
+		<!--
+		<manifestclasspath property="jar.classpath"
+				jarfile="${lib.dir}/backoffice.jar">
+			<classpath refid="runtime.classpath" />
+		</manifestclasspath>
+		-->
+		<jar destfile="${lib.dir}/backoffice.jar">
+			<manifest>
+				<attribute name="Built-By" value="${user.name}"/>
+				<attribute name="Implementation-Title" value="BACKOFFICE MVC" />
+				<attribute name="Implementation-Version" value="${build.number}" />				
+				<attribute name="Built-Date" value="${TIME_NOW}" />	
+				<!--
+				<attribute name="Class-Path" value="${jar.classpath}" />				
+				-->
+			</manifest>		
+			<fileset dir="${build.dir}">
+				<include name="**/*"/>
+			</fileset>
+			<fileset dir="${src.dir}">
+				<exclude name="**/*.java" />				
+				<include name="**/*.properties"/>
+				<include name="**/*.xml"/>
+			</fileset>			
+		</jar>					
+	</target>
+	
+	<target name="rebuild" depends="clean, jar" />	
+
+</project>
+

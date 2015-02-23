@@ -1,0 +1,379 @@
+<html>
+<head>
+<link type="text/css" rel="stylesheet" href="css/default.css"/>
+<script type="text/javascript" src="js/tbupdater.js"></script>
+<script type="text/javascript" src="js/downstream.js"></script>
+<script type="text/javascript">
+
+var currentPage = 1;
+var backupHTML = '';
+
+var onlineCoordinators = '';
+  
+function loadJSon(url, data)
+{	
+	if (window.XMLHttpRequest)
+	{
+	  xhttp=new XMLHttpRequest();
+	}
+	else
+	{
+	  xhttp=new ActiveXObject("Microsoft.XMLHTTP");
+	}	
+	
+	xhttp.open("POST", url, false);
+	xhttp.setRequestHeader('Content-type','text/json');
+	xhttp.send(data);
+	
+	return eval('( ' + xhttp.responseText + ' )');
+	
+}
+
+function loadCoordinators()
+{
+	var i;
+	var o = loadJSon('../network/coordinators', null);
+	var coordinators = o.coordinators;
+	onlineCoordinators = '';
+	
+	var select = document.getElementById('selCoordinator'); 
+	for (i = 0; i < coordinators.length; i++) {
+		if (coordinators[i].mac_address == null || coordinators[i].mac_address == 'null') continue;
+		select.options[select.options.length] = new Option(coordinators[i].mac_address, coordinators[i].mac_address);	
+		if (coordinators[i].online == 'true') {
+			if (onlineCoordinators.length > 0) onlineCoordinators += ' '; 
+			onlineCoordinators += coordinators[i].mac_address;
+		}
+	}	
+	select = document.getElementById('selChannel'); 
+	for (i = 0; i < coordinators.length; i++) {
+		if (coordinators[i].channel != '0') {
+			select.options[select.options.length] = new Option('canale ' + coordinators[i].channel, coordinators[i].mac_address);		
+		}
+	}	
+}
+
+function hasValue(ofield)
+{
+	var i;
+	if (!ofield) return false;
+	if (!ofield.value) return false;
+	if (ofield.value == null) return false;
+	if (ofield.value.length == 0) return false;
+	for (i = 0; i < ofield.value.length; i ++) {
+		switch (ofield.value.charAt(i))
+		{
+			case ' ':
+			case '\r':
+			case '\t':
+			case '\n':
+				break;
+			default:
+				return true;
+		}		
+	}
+	return false;
+}
+
+
+function dosearch(usebackup)
+{
+	var from = (currentPage - 1) * parseInt(document.getElementById('selPages').value);
+	from ++;
+	
+	var url = '../network/esls?';
+	
+	url += 'limit=' + document.getElementById('selPages').value;
+	url += '&from=' + from; 
+	
+	if (hasValue(document.getElementById('txtEsl'))) {
+		url += '&mac=' + document.getElementById('txtEsl').value;
+	}
+	
+	if (hasValue(document.getElementById('selChannel'))) {
+		url += '&coordinatorMac=' + document.getElementById('selChannel').value;
+	}
+	else if (hasValue(document.getElementById('selCoordinator'))) {
+		url += '&coordinatorMac=' + document.getElementById('selCoordinator').value;
+	}
+	
+	if (hasValue(document.getElementById('txtAddress'))) {
+		var n = 0;
+		if (document.getElementById('hex').checked) {
+			n = parseInt(document.getElementById('txtAddress').value, 16);
+		} else {
+			n = parseInt(document.getElementById('txtAddress').value);
+		}
+		url += '&shortAddress=' + n;
+	}
+	
+	if (hasValue(document.getElementById('selType')))
+		url += '&esltype=' + document.getElementById('selType').value;
+	
+	if (usebackup) 
+		backupHTML = document.getElementById('displaydata').innerHTML;
+	else 
+		backupHTML = null;
+		
+	tbUpdate(url, 'xsl/esls.xsl', 'Nessuna etichetta trovata con il filtro impostato', postRendering)
+	
+}
+
+function doleave(e)
+{
+	var btn = e;//(e == null ? window.event.target : e.which);
+	
+	// the clicked html button must followed by hidden 
+	// div tag containing text filled with the mac address 
+	// of the esl mac address
+	var mac = btn.nextSibling.innerHTML;  
+	sendLeave(mac);
+	
+	btn.style.display = 'none';
+	btn.nextSibling.innerHTML = 'inviato leave!';
+	btn.nextSibling.style.display = 'block';
+	
+}
+
+function doSetChannelToJoin(e)
+{
+	var btn = e; //(e == null ? window.event.target : e.which);
+	
+	//if (btn.type != 'button') return;
+
+	// the clicked html button must followed by hidden 
+	// div tag containing text filled with the mac address 
+	// of the esl mac address
+	var mac = btn.nextSibling.nextSibling.innerHTML;  
+	var channel = btn.nextSibling.value;
+	
+	alert ("sending channel " + channel + " to " + mac);
+	
+	sendSetChannelToJoinRequest (channel, 10, mac);
+	
+	btn.style.display = 'none';
+	btn.nextSibling.style.display = 'none';
+	btn.nextSibling.nextSibling.innerHTML = 'inviato SetChannelToJoin => ' + channel;
+	btn.nextSibling.nextSibling.style.display = 'block';
+	
+}
+
+function postRendering()
+{
+	var pageRows = parseInt(document.getElementById('selPages').value);
+	var o = document.getElementById('displaydata');
+	
+	if (o == null) return;
+	if (o.children == null) return;
+	if (o.children[0] == null) return;
+	if (o.children[0].children == null) return;
+	if (o.children[0].children[0] == null) return;
+	if (o.children[0].children[0].children == null) return;
+	
+	var tb = o.children[0].children[0];
+	
+	if (!tb && backupHTML != null) {
+		o.innerHTML = backupHTML;
+		currentPage --;
+		return;
+	}
+	
+	var n = tb.children.length;
+	var cnt = ((currentPage - 1) * pageRows);
+	
+	cnt ++;
+	for (i = 0; i < n; i ++)
+	{
+		if (i < 1) continue;
+		if (i >= n - 1) break;
+		tr = tb.children[i];		
+		tr.children[0].innerHTML = cnt;
+		cnt ++;
+		
+		if (tr.children[4].innerHTML == 'null') {
+			tr.style.color = '#808080';
+			tr.children[4].innerHTML = 'Non associata';			
+		}
+		else {
+			//tr.children[5].children[0].onclick = doleave;
+			//tr.children[6].children[0].onclick = doSetChannelToJoin;
+		}
+		if (tr.children[3].innerHTML == '5') {
+			tr.children[3].innerHTML = 'ESL50 (5)';
+		}
+		else if (tr.children[3].innerHTML == '6') {
+			tr.children[3].innerHTML = 'ESL70 (6)';
+		}
+		
+		//disabilito comandi se coordinator non e' online
+		if (onlineCoordinators.indexOf(tr.children[4].innerHTML) < 0) {
+			tr.children[5].children[0].className = 'disabled';
+			tr.children[5].children[0].disabled = true;
+			tr.children[6].children[0].className = 'disabled';
+			tr.children[6].children[0].disabled = true;
+			tr.children[6].children[1].disabled = true;
+		}
+		
+	}
+	
+	if (currentPage > 1 && n <= 2) {
+		currentPage --;
+		document.getElementById("displaydata").innerHTML = _backupHTML;
+		return;
+	}
+	
+	if (currentPage == 1 && n <= 2) {		
+		document.getElementById("displaydata").innerHTML = '<b>Nessuna etichetta autorizzata!</b>';		
+	}
+			
+	if (currentPage == 1 && n == 1) {		
+		if (currentPage == 1) {
+			var o = document.getElementById("displayNum");
+			o.innerHTML = 'Nessuna etichetta autorizzata!';
+			document.getElementById("btnSearch").disabled = true;			
+			document.getElementById("displayNext").innerHTML = '';
+			document.getElementById("displayPrev").innerHTML = '';
+			document.getElementById("displayFirst").innerHTML = '';				
+			document.getElementById("eslForm").style.display = 'none';
+			document.getElementById("displaydata").style.display = 'none';			
+		}
+		return;
+	}
+	
+	document.getElementById("displayNum").innerHTML = 'Pagina corrente: ' + currentPage;
+
+}
+
+function doAction(o) {
+		
+	if (!o.id) return;
+
+	var id = o.id.trim();			
+	
+	var n = id.indexOf('_');
+	if (n <= 0) return;
+	
+	var action = id.substr(0, n);
+	var mac = id.substr(n + 1);			
+				
+	switch (action) {
+		case 'leave':
+			if (!sendLeave(mac)) return;
+			break;
+		case 'kill':
+			if (!sendKill(mac)) return;
+			break;
+		case 'stats':
+			if (!sendStatisticsRequest(mac)) return;
+			break;
+		case 'join':
+			var channel = document.getElementById('selchannel_' + mac).value;
+			if (!sendSetChannelToJoinRequest (channel, 5, mac)) return;
+			break;
+		default:
+			return;
+	}
+}
+
+</script>
+</head>
+<body style="margin-top: 0px; " 
+	onload="loadCoordinators(); dosearch(false);">
+			
+	<table cellpadding="5" cellspacing="0" class="formtable">
+		
+		<tr style="height: 25px;">
+			<td colspan="2" align="center" class="formtableHeader">Filtra Esl</td>
+		</tr>
+		
+		<tr>
+			<td align="left">Mac address etichetta</td>
+			<td align="right">
+				<input type="text" id="txtEsl" style="text-align: right;"></input>
+			</td>
+		</tr>
+		
+		<tr>
+			<td align="left">Canale IEEE 802.15.4</td>
+			<td align="right">
+				<select id="selChannel" class="formfield">
+					<option value="">Tutti</option>
+				</select>
+			</td>
+		<tr>
+		
+		<tr>
+			<td align="left">Mac address coordinator</td>
+			<td align="right">
+				<select id="selCoordinator" class="formfield">
+					<option value="">Tutti</option>
+					<option value="null">Non associate</option>					
+				</select>
+			</td>
+		<tr>
+		
+		<tr>
+			<td align="left">Network address</td>
+			<td align="right">
+				<input type="radio" name="fmt" id="hex" checked="checked"></input><span>hex</span>
+				&nbsp;
+				<input type="radio" name="fmt" ></input><span>dec</span>	
+				&nbsp;
+				<input type="text" id="txtAddress" style="width: 60px; text-align: right;"></input>
+			</td>
+		</tr>
+		
+		<tr>
+			<td align="left">Tipo etichetta</td>
+			<td align="right">
+				<select id="selType" class="formfield">
+					<option value="">Tutti i tipi</option>
+					<option value="1">OLD/SMALL DM0567YT</option>
+					<option value="2">OLD/MEDIUM DM0558YT</option>
+					<option value="3">OLD/LARGE DM0568YT</option>
+					<option value="4">EPAPER EG020AS012</option>
+					<option value="5">ESL50 MEDIUM</option>
+					<option value="6">ESL70 EPAPER</option>
+					<option value="9">ESLG 9</option>
+					<option value="10">ESLG 10</option>					
+				</select>
+			</td>
+		</tr>
+		
+		<tr>
+			<td align="left">Numero di risultati per pagina</td>
+			<td align="right">
+				<select id="selPages" class="formfield" style="text-align: right; width: 100px;">
+					<option>10</option>
+					<option selected="selected">20</option>
+					<option>50</option>
+				</select>
+			</td>
+		</tr>
+		
+		<tr>
+			<td colspan="2" align="right">
+				<input type="button" value="cerca" onclick="dosearch(false)" style="width: 100px;"></input>
+			</td>			
+		</tr>
+				
+		<tr style="height: 25px;">
+			<td align="center" colspan="2">
+				<a href="javascript: currentPage = 1; dosearch(true);">|&lt;</a>
+				&nbsp;&nbsp;&nbsp;
+				<a href="javascript: if (currentPage > 1) currentPage --; dosearch(true);">&lt;&lt;</a>
+				&nbsp;&nbsp;&nbsp;
+				<span id="displayNum" style="font-weight: bolder;"></span>
+				&nbsp;&nbsp;&nbsp;
+				<a href="javascript: currentPage ++; dosearch(true);">&gt;&gt;</a>
+			</td>
+		</tr>
+		
+	</table>
+		
+	<br/>
+		
+	<div id="displaydata"></div>
+	
+</body>
+</html>

@@ -1,0 +1,386 @@
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<link type="text/css" rel="stylesheet" href="css/default.css"/>
+<script type="text/javascript" src="js/chart.js"></script>
+<script type="text/javascript">
+
+var isIE = (window.navigator.userAgent.indexOf("MSIE ") >= 0 || window.navigator.userAgent.indexOf('.NET') > 0);
+
+function loadJSon(url, data)
+{	
+	if (!isIE)
+	{
+	  xhttp=new XMLHttpRequest();
+	}
+	else
+	{
+	  xhttp=new ActiveXObject("Microsoft.XMLHTTP");
+	}	
+	xhttp.open("POST", url, false);
+	xhttp.setRequestHeader('Content-type','text/json');
+	xhttp.send(data);
+	return eval('( ' + xhttp.responseText + ' )');
+}
+
+function setLoading()
+{
+	var items = document.getElementsByTagName("div");	
+	
+	for (var i = 0; i < items.length; i++) {	
+		if (items[i].id.indexOf('chart') == 0) {
+			items[i].style.display = 'none';
+		}
+		else if (items[i].id.indexOf('loading') == 0) {
+			items[i].style.display = 'block';
+		}			
+	}
+	
+	var items = document.getElementsByTagName("td");	
+	
+	for (var i = 0; i < items.length; i++) {	
+		if (items[i].id.indexOf('tab-') == 0) {
+			items[i].className = 'tab';
+		}
+	}
+	
+}
+
+//
+// TODO arrivar a coprire almeno fino a 16 colori con sfumatura
+//
+
+var colors1 = "#F7464A #46BFBD #FDB45C #949FB1 #4D5360 #00AA00 #00AAFF #EEAA00 #EE0400 #888888";
+var colors2 = "#FF5A5E #5AD3D1 #FFC870 #A8B3C5 #616774 #00CC00 #00AAFF #EEAA00 #EE0400 #888888";
+
+function do_click(id)
+{
+	var c1 = colors1.split(' ');
+	var c2 = colors2.split(' ');
+	
+	document.getElementById('tab-' + id).className = 'tabsel';
+			
+	setLoading();	
+	
+	var html = '';
+
+	if (id == 'chart1') {		
+		
+		var data = new Array();		
+		var response = loadJSon('../network/coordinators', null);
+		var arr = response.coordinators;
+		
+		if (arr) {
+		
+			html += '<ol>';
+						
+			for (var i = 0; i < arr.length; i ++) {
+			
+				var title = arr[i].port_url;
+				if (title.indexOf(':/') > 0) title = title.substring(title.lastIndexOf('/') + 1);
+				if (title.indexOf(':') > 0) title = title.substring(0, title.indexOf(':'));
+				title = title.toUpperCase();
+				
+				if (arr[i].channel != 'null') title += ' Canale ' + arr[i].channel;
+				else title += ' OFFLINE';
+				
+				html += '<li style="padding-top: 10px; font-size: 12px; font-weight: bolder; color: ' + c1[i] + ';">' + title;				
+				html += '<table style="width: 200px; font-weight: normal; border: 1px ' + c1[i] + ' solid; border-left: 20px ' + c1[i] + ' solid;">';
+				html += '<tr style="font-weight: bolder; font-size: 10px; color: ' + c1[i] + ';"><td>Stato: </td><td>' + (arr[i].online == 'true' ? 'ONLINE' : 'OFFLINE') + '</td></tr>';
+				html += '<tr style="font-weight: bolder; font-size: 10px; color: ' + c1[i] + ';"><td>Mac:   </td><td>' + (arr[i].mac_address != null && arr[i].mac_address != 'null' ? arr[i].mac_address : 'non rilevato') + '</td></tr>';
+				html += '<tr style="font-weight: bolder; font-size: 10px; color: ' + c1[i] + ';"><td>Esls:  </td><td>' + (arr[i].mac_address != null && arr[i].mac_address != 'null' ? arr[i].esls : '?') + '</td></tr>';
+				html += '<tr style="font-weight: bolder; font-size: 10px; color: ' + c1[i] + ';"><td>Porta: </td><td>' + arr[i].port_url + '</td></tr>';
+				html += '</table></li>';
+				
+				if (arr[i].esls == 0) continue;
+				
+				var label = (arr[i].channel != null && arr[i].channel != 'null' ? 'Canale ' + arr[i].channel : 'Porta ' + arr[i].port_url);
+				
+				data.push({
+					value: parseInt(arr[i].esls),
+					color: c1[i],
+					highlight: c2[i],
+					label: label
+				});
+				
+			}
+
+			html += '</ol>';
+			
+			var ctx = document.getElementById(id + "-graph").getContext("2d");
+			new Chart(ctx).Doughnut(data);
+			
+		}
+			
+	}
+	else if (id == 'chart2') {		
+		
+		var response = loadJSon('../network/coordinators', null);
+		var arr2 = response.coordinators;
+		
+		var nd_port = '';
+		
+		var count_online = 0;
+		var count_offline = 0;		
+		var detected_cc = '';
+		
+		if (arr2) {		
+			for (var i = 0; i < arr2.length; i ++) {
+				if (arr2[i].mac_address.length >= 16) {
+					if (arr2[i].online == 'true') {
+						count_online += parseInt(arr2[i].esls);
+					}
+					else {
+						count_offline += parseInt(arr2[i].esls);	
+					}
+					detected_cc += arr2[i].mac_address.toUpperCase();
+					detected_cc += ' ';
+				}
+				else {
+					nd_port += '<li>' + arr2[i].port_url + '</li>';
+				}
+			}			
+		}
+				
+		var response = loadJSon('../sqlquery/select COUNT(*), coordinatorMac from esls group by coordinatorMac', null);
+		var arr = response.result;
+		
+		if (!arr) return;
+		
+		var count_cc_detected = 0;
+		var count_cc_not_detected = 0;
+		var count_cc_not_associated = 0;
+		
+		for (var i = 0; i < arr.length; i ++) {
+            if (arr[i].coordinatorMac && arr[i].coordinatorMac.length >= 16) {
+                            if (detected_cc.indexOf(arr[i].coordinatorMac.toUpperCase()) < 0) {
+                                            count_cc_not_detected += parseInt(arr[i].column1);
+                            }
+                            else if (arr[i].column1) {
+                                            count_cc_detected += parseInt(arr[i].column1);
+                            }
+            }
+            else if (arr[i].column1) {
+                            count_cc_not_associated += parseInt(arr[i].column1);
+            }
+        }
+
+
+		var CL_ON_0 = c1[5];
+		var CL_ON_1 = c2[5];
+		var CL_OF_0 = c1[0];
+		var CL_OF_1 = c2[0];
+		var CL_ND_0 = c1[2];
+		var CL_ND_1 = c2[2];
+		var CL_NA_0 = c1[3];
+		var CL_NA_1 = c2[3];
+				
+		html += '<ol>';		
+		html += '<li style="padding-top: 10px; font-size: 12px; font-weight: bolder; color: ' + CL_ON_0 + ';"><span style="color: #808080;"><b>' + count_online + '</b><br>ESLs joined to coordinator ONLINE</span></li>';
+		html += '<li style="padding-top: 10px; font-size: 12px; font-weight: bolder; color: ' + CL_OF_0 + ';"><span style="color: #808080;"><b> ' + count_offline + '</b><br>ESLs joined to coordinator OFFLINE</span></li>';
+		html += '<li style="padding-top: 10px; font-size: 12px; font-weight: bolder; color: ' + CL_ND_0 + ';"><span style="color: #808080;"><b> ' + count_cc_not_detected + '</b><br>ESLs joined to coordinator NOT DETECTED</span></li>';
+		html += '<li style="padding-top: 10px; font-size: 12px; font-weight: bolder; color: ' + CL_NA_0 + ';"><span style="color: #808080;"><b> ' + count_cc_not_associated + '</b><br>ESLs NEVER JOINED</span></li>';
+		html += '</ol>';
+
+		if (count_cc_detected != (count_online + count_offline)) {
+			var m = count_online + count_offline;			
+			html += '<br><br><div style="padding-left: 20px;">'
+					+ '<b style="text-decoration: underline;">ATTENZIONE:</b><br>'
+					+ 'Sul database risultano associate ' + count_cc_detected + ' ESLs ai coordinator ' 
+					+ 'rilevati sul network attuale, mentre il conteggio del registro della network application ammonta a ' 
+					+ m + ' ESLs.<br>'
+					+ 'Ciò può essere causato dal disallineamento tra network application e ' 
+					+ 'database per mancata consumazione degli eventi di rejoin dal backend, '
+					+ 'è quindi possibile che al momento <b style="text-decoration: underline;">'
+					+ 'sul database alcune ESLs risultino associate a coordinator sbagliati</b>.';
+		}
+		
+		if (count_cc_not_detected > 0) {			
+			html += '<br><br><div style="padding-left: 20px;">'
+					+ '<b style="text-decoration: underline;">ATTENZIONE:</b><br>'
+					+ 'Sul database sono presenti '
+					+ count_cc_not_detected 
+					+ 'ESLs associate a coordinator non rilevati sul network correntemente gestito, '
+					+ 'forse si tratta di elementi non appartenenti al network perchè rimossi ' 
+					+ 'o gestiti da altri SW';
+			if (nd_port.length > 0) {
+				html += '<br><br><b style="text-decoration: underline;">Potrebbe comunque trattarsi di ESLs '
+						+ 'appartenenti a uno o più coordinator non ancora online sulle seguenti porte:<ol>' + nd_port + '</ol></b>';
+			}
+		}
+				
+		var polarData = [
+				{
+					value: count_online,
+					color: CL_ON_0,
+					highlight: CL_ON_1,
+					label: "Joined Online"
+				},
+				{
+					value: count_offline,
+					color: CL_OF_0,
+					highlight: CL_OF_1,
+					label: "Joined Offline"
+				},
+				{
+					value: count_cc_not_detected,
+					color: CL_ND_0,
+					highlight: CL_ND_1,
+					label: "Joined Not detected"
+				},
+				{
+					value: count_cc_not_associated,
+					color: CL_NA_0,
+					highlight: CL_NA_1,
+					label: "Never Joined"
+				}
+			];
+			
+		var ctx = document.getElementById(id + "-graph").getContext("2d");	
+		new Chart(ctx).PolarArea(polarData);
+		
+	}
+	else {			
+		alert('Implementation error:\r\ngraphic id not valid');		
+	}
+	
+	document.getElementById(id + '-desc').innerHTML = (html ? html : '&nbsp;');
+	document.getElementById('tab-' + id).className = 'tabsel';
+	
+	document.getElementById("loading").style.display = 'none';	
+	document.getElementById(id).style.display = 'block';;
+}
+
+</script>
+
+</head>
+
+<body style="margin-top: 0px; background: #e0e0e0;" onload="do_click('chart1')">
+
+<br>
+
+<!-- 
+	// ///////////////////////////////////////////////////////////////////////////  
+	//
+	// HEADER
+	//
+	// /////////////////////////////////////////////////////////////////////////// 
+	-->
+	
+<table cellspacing="0" cellpadding="5" style="width: 900px; margin-top: -15px;">	
+	<tr>
+		<td class="tab" align="left" 
+				onmouseover="this.style.textDecoration = 'underline';"
+				onmouseout="this.style.textDecoration = 'none';"
+				onclick="do_click('chart1')"
+				id="tab-chart1">
+			Distribuzione ESLs ripartite<br>per accentratore
+		</td>
+		<td class="tab" align="left"
+				onmouseover="this.style.textDecoration = 'underline';"
+				onmouseout="this.style.textDecoration = 'none';"
+				onclick="do_click('chart2')"
+				id="tab-chart2">
+			Distribuzione ESLs ripartite<br>per stato accentratore
+		</td>
+	</tr>
+</table>
+
+<!-- 
+	// ///////////////////////////////////////////////////////////////////////////  
+	//
+	// LOADING VISUALIZATION
+	//
+	// /////////////////////////////////////////////////////////////////////////// 
+	-->
+
+<div style="display: block" >
+<table cellspacing="0" cellpadding="5" style="font-size: 10px; width: 900px;">
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left">
+		&nbsp;
+		</td>
+		<td class="tabBorderNone" valign="top" align="center">
+		&nbsp;
+		</td>	
+		<td class="tabBorderRight" valign="top" align="left">
+		&nbsp;
+		</td>
+	</tr>
+</table>
+</div>
+	
+<div id="loading" style="display: block" >
+<table cellspacing="0" cellpadding="5" style="font-size: 10px; width: 900px;">
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left">
+		&nbsp;
+		</td>
+		<td class="tabBorderNone" valign="top" align="center">
+		<i>caricamento in corso ...</i>
+		</td>	
+		<td class="tabBorderRight" valign="top" align="left">
+		&nbsp;
+		</td>
+	</tr>
+</table>
+</div>
+
+<!-- 
+	// ///////////////////////////////////////////////////////////////////////////  
+	//
+	// GRAPHICS VISUALIZATION
+	//
+	// /////////////////////////////////////////////////////////////////////////// 
+	-->
+	
+<div id="chart1" style="display: none" >
+<table cellspacing="0" cellpadding="5" style="font-size: 10px; width: 900px;">
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left" id='chart1-desc'>
+		&nbsp;
+		</td>
+		<td class="tabBorderNone" valign="top" align="center">
+			<canvas id="chart1-graph" width="300" height="300"/>
+		</td>	
+		<td class="tabBorderRight" valign="top" align="left">
+		&nbsp;
+		</td>
+	</tr>
+</table>
+</div>
+
+<div id="chart2" style="display: none" >
+<table cellspacing="0" cellpadding="5" style="font-size: 10px; width: 900px;">
+	<tr>
+		<td class="tabBorderLeft" valign="top" align="left" id='chart2-desc'>
+		&nbsp;
+		</td>
+		<td class="tabBorderNone" valign="top" align="center">
+			<canvas id="chart2-graph" width="300" height="300"/>
+		</td>	
+		<td class="tabBorderRight" valign="top" align="left">
+		&nbsp;
+		</td>
+	</tr>
+</table>
+</div>
+
+<!-- 
+	// ///////////////////////////////////////////////////////////////////////////  
+	//
+	// FOOTER
+	//
+	// /////////////////////////////////////////////////////////////////////////// 
+	-->
+
+<table cellspacing="0" cellpadding="5" style="width: 900px;">
+	<tr style="height: 40px; color: darkBlue;">
+		<td class="tabBorderBottomLeft" align="left">&nbsp;</td>
+		<td class="tabBorderBottom" align="right">&nbsp;</td>
+		<td class="tabBorderBottomRight" align="right">&nbsp;</td>
+	</tr>
+</table>
+	
+</body>
+</html>

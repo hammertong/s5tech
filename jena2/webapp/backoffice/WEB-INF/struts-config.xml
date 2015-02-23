@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>         
+<!DOCTYPE struts-config PUBLIC
+       "-//Apache Software Foundation//DTD Struts Configuration 1.1//EN"
+       "http://jakarta.apache.org/struts/dtds/struts-config_1_1.dtd">          
+         
+<struts-config>
+
+	<form-beans>
+
+		<form-bean name="loginForm" type="com.s5tech.backend.form.LoginForm"/>  
+		<form-bean name="productSearchForm" type="com.s5tech.backend.form.ProductSearchForm"/>
+		<form-bean name="menuForm" type="com.s5tech.backend.form.MenuForm"/>  
+		<form-bean name="associateEslForm" type="com.s5tech.backend.form.AssociateEslForm"/>  
+		<form-bean name="removeEslAssociationForm" type="com.s5tech.backend.form.RemoveEslAssociationForm"/>  
+		<form-bean name="pricerForm" type="com.s5tech.backend.form.PricerForm"/>  
+		<form-bean name="stickerForm" type="com.s5tech.backend.form.StickerForm"/>
+		
+		<!--
+		<form-bean 
+				name="accountInformationForm"
+				dynamic="true"
+				type="org.apache.struts.action.DynaActionForm">
+			<form-property name="accounts" type="java.util.ArrayList"/>
+		</form-bean>  
+		-->
+		
+	</form-beans>
+
+	<global-exceptions>
+
+		<exception key="global.error.invalidlogin"
+			path="/login.jsp"
+			scope="request"
+			type="com.s5tech.backend.service.InvalidLoginException"/>
+		
+	</global-exceptions>
+
+	<global-forwards>
+	
+		<forward name="Login" path="/login.jsp" />
+		
+		<forward name="FormatJSon" path="/WEB-INF/pages/include/json.jsp" />		
+		
+		<forward name="SystemFailure" path="/WEB-INF/pages/errors/systemerror.jsp" />
+		<forward name="SessionTimeOut" path="/WEB-INF/pages/errors/sessiontimeout.jsp" />		
+		
+		<forward name="Home" path="/action/home"/>	
+		
+		<!-- default interface -->
+		<forward name="Pricer" path="/WEB-INF/pages/standard/pricer.jsp" /> 
+		<forward name="Daily" path="/WEB-INF/pages/standard/daily.jsp"/>
+		<forward name="Alerts" path="/WEB-INF/pages/standard/alerts.jsp"/>			
+		<forward name="Product" path="/WEB-INF/pages/standard/product.jsp"/>	
+		
+		<!-- network diagnostics interface -->
+		<forward name="System" path="/WEB-INF/pages/netdiag/system.jsp"/>	
+		
+	</global-forwards>
+
+	<action-mappings>
+
+		<action path="/login"
+				name="loginForm"
+				type="com.s5tech.backend.action.LoginAction"
+				scope="request"
+				validate="true"
+				input="/login.jsp">			
+			<forward name="Failure" path="/login.jsp" redirect="true"/>
+		</action>
+
+		<action path="/logout"
+				type="com.s5tech.backend.action.LogoutAction"
+				scope="request">    
+			<forward name="Success" path="/login.jsp" redirect="true"/>
+		</action>
+		
+		<action path="/home"
+				type="com.s5tech.backend.action.HomeAction"
+				scope="request">
+		</action>
+				
+		<!--
+		<action path="/home/pricer"
+				parameter="/WEB-INF/pages/standard/pricer.jsp"
+				type="org.apache.struts.actions.ForwardAction">
+		</action> 
+		-->
+		
+		<action path="/menu"	
+				name="menuForm"
+				type="com.s5tech.backend.action.MenuLookupDispatchAction"
+				scope="request"
+				parameter="method"
+				validate="true">
+			
+			<!-- default interface -->
+			<forward name="Association" path="/WEB-INF/pages/standard/assesl.jsp"/>
+			<forward name="Disassociation" path="/WEB-INF/pages/standard/remesl.jsp"/>			
+			<forward name="Sticker" path="/WEB-INF/pages/standard/sticker.jsp"/>			
+			
+			<!-- network diagnostics interface -->
+			<forward name="Hubs" path="/WEB-INF/pages/netdiag/hubs.jsp"/>	
+			<forward name="Coordinators" path="/WEB-INF/pages/netdiag/coordinators.jsp"/>	
+			<forward name="Queues" path="/WEB-INF/pages/netdiag/queues.jsp"/>	
+			<forward name="Esls" path="/WEB-INF/pages/netdiag/esls.jsp"/>	
+			<forward name="Threads" path="/WEB-INF/pages/netdiag/threads.jsp"/>	
+			<forward name="Commands" path="/WEB-INF/pages/netdiag/commands.jsp"/>	
+			<forward name="EslCommands" path="/WEB-INF/pages/netdiag/eslcommands.jsp"/>	
+			<forward name="Firmware" path="/WEB-INF/pages/netdiag/upgrading.jsp"/>				
+			<forward name="Config" path="/WEB-INF/pages/netdiag/config.jsp"/>				
+			<forward name="Graphics" path="/WEB-INF/pages/netdiag/graphics.jsp"/>
+		
+		</action>
+		
+		<action path="/assesl"
+				name="associateEslForm"				
+				type="com.s5tech.backend.action.AssociateEslAction"
+				scope="request"				
+				validate="true"
+				input="/WEB-INF/pages/standard/assesl.jsp">
+			<forward name="Success" path="/WEB-INF/pages/standard/assesl.jsp"/>
+		</action>
+		
+		<action path="/remesl"		
+				name="removeEslAssociationForm"				
+				type="com.s5tech.backend.action.RemoveEslAssociationAction"
+				scope="request"				
+				validate="true"
+				input="/WEB-INF/pages/standard/remesl.jsp">						
+			<forward name="Success" path="/WEB-INF/pages/standard/remesl.jsp"/>
+		</action>
+		
+		<action path="/pdetail"		
+				name="productSearchForm"
+				type="com.s5tech.backend.action.ProductDetailAction"
+				scope="request"				
+				validate="true"
+				input="/WEB-INF/pages/standard/product.jsp">						
+			<forward name="View" path="/WEB-INF/pages/standard/pdetail.jsp"/>
+		</action>
+		
+		<action path="/pricer"		
+				name="pricerForm"				
+				type="com.s5tech.backend.action.PricerAction"
+				scope="request"		
+				parameter="method"				
+				validate="true"
+				input="/WEB-INF/pages/standard/pricer.jsp">						
+			<forward name="Success" path="/WEB-INF/pages/standard/pricer.jsp"/>
+		</action>
+		
+		<action path="/sticker"
+				name="stickerForm"				
+				type="com.s5tech.backend.action.StickerLookupDispatchAction"
+				scope="request"				
+				parameter="method"
+				validate="true"
+				input="/WEB-INF/pages/standard/sticker.jsp">			
+		</action>
+		
+		<action path="/messages"
+				type="com.s5tech.backend.action.MessagesAction"
+				scope="request">    
+			<forward name="Messages" path="/WEB-INF/pages/include/messages.jsp" />		
+		</action>
+		
+	</action-mappings>
+
+	<controller 
+			contentType="text/html;charset=UTF-8"
+			debug="3"
+			locale="true"
+			nocache="true"/>   
+			
+	<message-resources parameter="BankingMessageResources" null="false"/>
+
+</struts-config>

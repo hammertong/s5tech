@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE web-app
+    PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+    "http://java.sun.com/dtd/web-app_2_3.dtd">
+    
+<web-app>  
+	
+  <filter>
+	<filter-name>loginFilter</filter-name>
+	<filter-class>com.s5tech.backend.framework.LoginFilter</filter-class>
+	<init-param>
+		<param-name>loginPage</param-name>
+		<param-value>/login.jsp</param-value>
+	</init-param>
+	<init-param>
+		<param-name>excludePatterns</param-name>
+		<param-value>(.*/login.*|.*/images.*|.*/js.*|.*/stylesheet.*)</param-value>
+    </init-param>		
+  </filter>
+    
+  <listener>
+      <listener-class>com.s5tech.backend.framework.ServicesListener</listener-class>
+  </listener>
+    
+  <!--
+	//
+	// Struts Configuration
+	//
+	-->
+  
+  <servlet>
+    <servlet-name>banking</servlet-name>
+    <servlet-class>org.apache.struts.action.ActionServlet</servlet-class>
+    <init-param>
+      <param-name>config</param-name>
+      <param-value>/WEB-INF/struts-config.xml</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  
+  <servlet>
+    <servlet-name>backend</servlet-name>
+	<servlet-class>com.s5tech.backend.servlet.BackendServicesServlet</servlet-class>        
+  </servlet>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+<!-- JSPC servlet mappings start -->
+
+    <servlet>
+        <servlet-name>org.apache.jsp.login_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.login_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.xslt.alerts_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.xslt.alerts_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.xslt.eslupdating_002dall_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.xslt.eslupdating_002dall_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.xslt.eslupdating_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.xslt.eslupdating_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.standard.alerts_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.WEB_002dINF.pages.standard.alerts_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.standard.assesl_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.WEB_002dINF.pages.standard.assesl_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.standard.daily_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.WEB_002dINF.pages.standard.daily_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.standard.pdetail_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.WEB_002dINF.pages.standard.pdetail_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.standard.pricer_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.WEB_002dINF.pages.standard.pricer_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.standard.product_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.WEB_002dINF.pages.standard.product_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.standard.remesl_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.WEB_002dINF.pages.standard.remesl_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.standard.sticker_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.WEB_002dINF.pages.standard.sticker_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.menu.standard_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.WEB_002dINF.pages.menu.standard_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.include.calendar_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.WEB_002dINF.pages.include.calendar_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.include.footer_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.WEB_002dINF.pages.include.footer_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.include.header_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.WEB_002dINF.pages.include.header_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.include.json_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.WEB_002dINF.pages.include.json_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.include.messages_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.WEB_002dINF.pages.include.messages_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.errors.sessiontimeout_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.WEB_002dINF.pages.errors.sessiontimeout_jsp</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.errors.systemerror_jsp</servlet-name>
+        <servlet-class>org.apache.jsp.WEB_002dINF.pages.errors.systemerror_jsp</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.login_jsp</servlet-name>
+        <url-pattern>/login.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.xslt.alerts_jsp</servlet-name>
+        <url-pattern>/xslt/alerts.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.xslt.eslupdating_002dall_jsp</servlet-name>
+        <url-pattern>/xslt/eslupdating-all.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.xslt.eslupdating_jsp</servlet-name>
+        <url-pattern>/xslt/eslupdating.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.standard.alerts_jsp</servlet-name>
+        <url-pattern>/WEB-INF/pages/standard/alerts.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.standard.assesl_jsp</servlet-name>
+        <url-pattern>/WEB-INF/pages/standard/assesl.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.standard.daily_jsp</servlet-name>
+        <url-pattern>/WEB-INF/pages/standard/daily.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.standard.pdetail_jsp</servlet-name>
+        <url-pattern>/WEB-INF/pages/standard/pdetail.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.standard.pricer_jsp</servlet-name>
+        <url-pattern>/WEB-INF/pages/standard/pricer.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.standard.product_jsp</servlet-name>
+        <url-pattern>/WEB-INF/pages/standard/product.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.standard.remesl_jsp</servlet-name>
+        <url-pattern>/WEB-INF/pages/standard/remesl.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.standard.sticker_jsp</servlet-name>
+        <url-pattern>/WEB-INF/pages/standard/sticker.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.menu.standard_jsp</servlet-name>
+        <url-pattern>/WEB-INF/pages/menu/standard.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.include.calendar_jsp</servlet-name>
+        <url-pattern>/WEB-INF/pages/include/calendar.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.include.footer_jsp</servlet-name>
+        <url-pattern>/WEB-INF/pages/include/footer.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.include.header_jsp</servlet-name>
+        <url-pattern>/WEB-INF/pages/include/header.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.include.json_jsp</servlet-name>
+        <url-pattern>/WEB-INF/pages/include/json.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.include.messages_jsp</servlet-name>
+        <url-pattern>/WEB-INF/pages/include/messages.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.errors.sessiontimeout_jsp</servlet-name>
+        <url-pattern>/WEB-INF/pages/errors/sessiontimeout.jsp</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>org.apache.jsp.WEB_002dINF.pages.errors.systemerror_jsp</servlet-name>
+        <url-pattern>/WEB-INF/pages/errors/systemerror.jsp</url-pattern>
+    </servlet-mapping>
+
+<!-- JSPC servlet mappings end -->
+
+  <servlet-mapping>
+    <servlet-name>banking</servlet-name>
+    <url-pattern>/action/*</url-pattern>
+  </servlet-mapping>
+  
+  <servlet-mapping>
+    <servlet-name>backend</servlet-name>
+    <url-pattern>/backend/*</url-pattern>
+  </servlet-mapping>
+  
+  <filter-mapping>
+    <filter-name>loginFilter</filter-name>
+    <url-pattern>*</url-pattern>
+  </filter-mapping>
+  
+  <welcome-file-list>
+	<welcome-file>index.htm</welcome-file>
+	<welcome-file>index.html</welcome-file>
+	<welcome-file>index.jsp</welcome-file>
+	<welcome-file>login.jsp</welcome-file>		
+  </welcome-file-list>
+
+  <taglib>
+    <taglib-uri>/WEB-INF/struts-html.tld</taglib-uri>
+    <taglib-location>/WEB-INF/struts-html.tld</taglib-location>
+  </taglib>
+
+  <taglib>
+    <taglib-uri>/WEB-INF/struts-bean.tld</taglib-uri>
+    <taglib-location>/WEB-INF/struts-bean.tld</taglib-location>
+  </taglib>
+    
+  <taglib>
+    <taglib-uri>/WEB-INF/struts-logic.tld</taglib-uri>
+    <taglib-location>/WEB-INF/struts-logic.tld</taglib-location>
+  </taglib>
+  
+  <session-config>
+	<!-- timeout in minutes, never expire -1  -->
+	<!--
+    <session-timeout>30</session-timeout>
+	-->
+	<!-- use low duration, because enforced by Ajax keep-alive -->
+	<session-timeout>30</session-timeout>
+  </session-config>
+
+</web-app>

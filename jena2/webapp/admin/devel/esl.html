@@ -1,0 +1,1707 @@
+<html>
+<head>
+<title>ESL render</title>
+
+<!-- **********************************************************************  -->
+<!--                                                                         -->
+<!--                                CALENDAR                                 -->
+<!--                                                                         -->
+<!-- **********************************************************************  -->
+
+<style>
+
+table.calendar {
+	font-family: Arial;
+	font-size: 12px;
+	background: #ffffff;
+	border: 1px solid #ffffff;
+	cursor: default;
+	border: 1px solid #9090ff;
+	padding-right: 10px;
+}
+
+td.calendar {
+	background: #ffffff;
+	border: 1px solid #ffffff;
+}
+
+td.monthname {
+	text-align: center;
+	font-weight: bolder;
+	color: #0000AA;
+}
+
+td.dayname {
+	text-align: right;
+	height: 25px;
+}
+
+tr.calendarheader {
+	background: #ffffff;
+	height: 25px;
+}
+
+tr.calendarfooter {
+	background: #ffffff;
+	height: 30px;
+}
+
+td.cout {
+	background: #ffffff;
+	border: 1px solid #ffffff;
+	color: #000000;
+	width: 25px; 
+}
+
+td.cover {
+	background: #e0e0ff;
+	border: 1px solid #9090ff;
+	color: #9090ff;
+	width: 25px;
+}
+
+td.current {
+	background: #d0d0ff;
+	border: 1px solid #303088;
+	color: #505088;
+	width: 25px;
+}
+
+a.arrow:link {
+	text-decoration: none;
+	color: #000000;
+}
+
+a.arrow:hover {
+	color: #8080ff;
+}
+
+a.arrow:visited {
+	color: #000000;
+}
+
+.time {
+	color: #0000AA;
+	border: 0px #ffffff solid;
+	width: 20px;
+	text-align: center;
+}
+</style>
+
+<script>
+<!--
+
+var selectedDate = new Date();
+
+var month_desc = new Array (
+	'Gennaio',
+	'Febbraio',
+	'Marzo',
+	'Aprile',
+	'Maggio',
+	'Giugno',
+	'Luglio',
+	'Agosto',
+	'Settembre',
+	'Ottobre',
+	'Novembre',
+	'Dicembre'
+);
+
+var week_desc = new Array (
+	'Lu',
+	'Ma',
+	'Me',
+	'Gi',
+	'Ve',
+	'Sa',
+	'Do'
+);
+
+function dayToPos(w) {
+	return (w > 0 ? w-- : 6);
+}
+
+function dayCount(month, year) {
+	switch(month)
+	{
+		case 3:
+		case 5:
+		case 8:
+		case 10:
+			return 30;
+			break;
+		case 1:
+			return (year % 4 == 0 ? 29 : 28);
+			break;
+		default:
+			return 31;
+			break;
+	}
+}
+
+function moveLeft() {
+	var year = selectedDate.getFullYear();
+	var month = selectedDate.getMonth();
+	month --;
+	if (month < 0) {
+		month = 11;
+		year --;
+	}
+	selectedDate = new Date(year, month, 1, selectedDate.getHours(), selectedDate.getMinutes(), 0);
+	calendar_reload();
+}
+
+function moveRight() {
+	var year = selectedDate.getFullYear();
+	var month = selectedDate.getMonth();
+	month ++;
+	if (month > 11) {
+		month = 0;
+		year ++;
+	}
+	selectedDate = new Date(year, month, 1, selectedDate.getHours(), selectedDate.getMinutes(), 0);
+	calendar_reload();
+}
+
+function shiftime(action) {
+	var h = parseInt(document.getElementById("hours").value);
+	var m = parseInt(document.getElementById("minutes").value);	
+	switch (action)	{
+		case 1:
+			h ++;
+			if (h > 23) h = 0;
+			break;
+		case 2:
+			h --;
+			if (h < 0) h = 23;
+			break;
+		case 3:
+			m += 10;
+			if (m > 59) {
+				m = 0;	
+				h ++;
+				if (h > 23) h = 0;
+			}
+			break;
+		case 4:
+			m -= 10;
+			if (m < 0) {
+				m = 50;			
+				h --;
+				if (h < 0) h = 23;
+			}
+			break;			
+	}	
+	if (h < 10) h = '0' + h;
+	if (m < 10) m = '0' + m;	
+	document.getElementById("hours").value = h;
+	document.getElementById("minutes").value = m;				
+	selectedDate.setHours(h);	
+	selectedDate.setMinutes(m);		
+}
+
+function cdeout(o) {
+	if (o.innerHTML == '&nbsp;') return;
+	if (o.className == 'current') return;
+	o.className = 'cout';
+}
+
+function cdeover(o) {
+	if (o.innerHTML == '&nbsp;') return;
+	if (o.className == 'current') return;
+	o.className = 'cover';
+}
+
+var calendar_box = null;
+var calendar_target = null;
+var calendar_curdate = 0; 
+
+function calendar_clickdate(o) {
+	if (o) {
+		if (!calendar_target) return;
+		if (o.innerHTML == '&nbsp;') return;
+		if (o.className == 'current') return;			
+		calendar_curdate = parseInt(o.innerHTML);
+	}
+	selectedDate.setDate(calendar_curdate);	
+	var date = selectedDate;	
+	var y = date.getFullYear();			
+	var m = date.getMonth();
+	m ++;
+	if (m < 10) m = '0' + m;	
+	var d = date.getDate();
+	if (d < 10) d = '0' + d;	
+	var hh = date.getHours();
+	if (hh < 10) hh = '0' + hh;	
+	var mm = date.getMinutes();
+	if (mm < 10) mm = '0' + mm;	
+	var ss = date.getSeconds();
+	if (ss < 10) ss = '0' + ss;	
+	var fdate = y + '-' + m + '-' + d + 'T' + hh + ':' + mm + ':' + ss;	
+	calendar_target.value = fdate;
+}
+
+function calendar_init(boxId, targetId) {
+	if (!calendar_box) calendar_box = document.getElementById(boxId);
+	if (!calendar_target) calendar_target = document.getElementById(targetId);		
+	calendar_reload();
+}
+
+function calendar_reload() 
+{	
+	var html = '';
+	html += '<table class="calendar" cellspacing="0" cellpadding="1" id="calendar">';
+	html += '	<tr class="calendarheader">';
+	html += '		<td align="right" valign="middle" class="cout"><a class="arrow" href="javascript:moveLeft();">&#9668;</a></td>';
+	html += '		<td align="center" valign="middle" colspan="5" class="monthname">';
+	html += '			<span id="monthname"></span>&nbsp;<span id="year"></span>';
+	html += '		</td>';
+	html += '		<td align="right" valign="middle" class="cout"><a class="arrow" href="javascript:moveRight();">&#9658;</a></td>';
+	html += '	</tr>';
+	html += '	<tr>';
+	html += '		<td class="dayname"></td>';
+	html += '		<td class="dayname"></td>';
+	html += '		<td class="dayname"></td>';
+	html += '		<td class="dayname"></td>';
+	html += '		<td class="dayname"></td>';
+	html += '		<td class="dayname"></td>';
+	html += '		<td class="dayname"></td>';
+	html += '	</tr>';
+	html += '	<tr>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '	</tr>';
+	html += '	<tr>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '	</tr>';
+	html += '	<tr>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '	</tr>';
+	html += '	<tr>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '	</tr>';
+	html += '	<tr>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '		<td align="right" valign="middle" class="cout" onclick="calendar_clickdate(this)" onmouseover="cdeover(this)" onmouseout="cdeout(this)"></td>';
+	html += '	</tr>';
+	html += '	<tr class="calendarfooter">';
+	html += '		<td align="right" valign="middle" class="cout"></td>';
+	html += '		<td align="center" valign="middle" class="cout" colspan="5">';
+	html += '			<a class="arrow" href="javascript:shiftime(1)">&#x25B2;</a>';
+	html += '			<a class="arrow" href="javascript:shiftime(2)">&#x25BC;</a>';
+	html += '			<input type="text" maxlength="2" id="hours" class="time" value="00" readonly="true"/>:<input type="text" maxlength="2" id="minutes" class="time" value="00" readonly="true"/>';
+	html += '			<a class="arrow" href="javascript:shiftime(3)">&#x25B2;</a>';
+	html += '			<a class="arrow" href="javascript:shiftime(4)">&#x25BC;</a>';
+	html += '		</td>';
+	html += '		<td align="left" valign="middle" class="cout"></td>';
+	html += '	</tr>';
+	html += '</table>';
+	
+	calendar_box.innerHTML = html;	
+	
+	//
+	// load calendar data
+	//
+	
+	var d  = selectedDate;
+	var dow = d.getDay();
+	var day = d.getDate();
+	var month = d.getMonth();
+	var year = d.getFullYear();
+	
+	document.getElementById("monthname").innerHTML = month_desc[month];
+	document.getElementById("year").innerHTML = year;
+	
+	var h = d.getHours();
+	if (h < 10) h = '0' + h;
+	var m = d.getMinutes();
+	while (m % 10 != 0) m --;
+	if (m < 10) m = '0' + m;
+	
+	document.getElementById("hours").value = h;
+	document.getElementById("minutes").value = m;
+	
+	var tb = document.getElementById("calendar").children[0];
+	
+	//popola le descrizioni del giorno della settimana
+	for (var j = 0; j < 7; j ++) {
+		tb.children[1].children[j].innerHTML = week_desc[j];
+	}
+	
+	//cerca che giorno della settimana e' il primo del mese 
+	var w = dow;
+	for (var i = day; i > 0; i --) {
+		w --;
+		if (w == -1) w = 6;
+	}
+	
+	var n = 0;
+	var vpos = dayToPos(w);
+
+	var day_limit = dayCount(month, year);
+		
+	//popola tabella con i giorni
+	for (var i = 0; i < 5; i ++)
+	{
+		for (var j = 0; j < 7; j ++)
+		{
+			tb.children[2 + i].children[j].className = 'cout';
+			
+			if (n == 0 && j == vpos) n = 1;  
+			
+			if (n > 0 && n <= day_limit) {
+				tb.children[2 + i].children[j].innerHTML = n;	
+				if (n == day) {
+					tb.children[2 + i].children[j].className = 'current';
+				}
+				n ++;
+			}	
+			else {
+				tb.children[2 + i].children[j].innerHTML = '&nbsp;';
+			}			
+		}
+	}	
+}
+
+// 
+// usage:
+// ------ 
+// calendar_init ('selcal', 'activation');
+// where 
+//  - 'selcal' is a div box
+//  - 'activation' is the target textbox
+//
+
+</script>
+
+<!-- **********************************************************************  -->
+<!--                                                                         -->
+<!--                             END CALENDAR                                -->
+<!--                                                                         -->
+<!-- **********************************************************************  -->
+
+
+<script type="text/javascript" src="../js/downstream.js"></script>
+<script type="text/javascript">
+<!--
+
+var data = new Object();
+
+function readconfig()
+{
+	var config = new Object();
+	
+	config.LINE = true;
+	
+	//TODO ...
+	config.onetoleft = document.getElementById('onetoleft').checked;
+	
+	//
+	// read all boolean icons specified by checkboxes
+	//
+	
+	var inputs = document.getElementsByTagName('input');
+	for (var i = 0; i < inputs.length; i ++) {
+		var input = inputs[i];
+		if (!input.id) continue;
+		if (input.type == 'checkbox') {
+			if (input.checked) {
+				config[input.id.toLowerCase()] = true;
+			}
+		}
+		//else {
+		//	print("input field '" + input.id + "' not managed !!!");
+		//}		
+	}
+	
+	//
+	// read discount
+	//
+	var sel = document.getElementById('discount');
+	if (sel.value != '255') {		
+		var _n = parseInt(sel.value);
+		if (_n < 10) {
+			config['%8[1]'] = _n;
+		}
+		else {
+			config['%8[0]'] = Math.floor(_n / 10);
+			config['%8[1]'] = _n % 10;
+		}	
+	}
+	
+	//
+	// read 5 digits
+	//
+	for (var i = 1; i <=5; i ++) {
+		var j = i - 1;
+		if (document.getElementById('digit' + i).value == '16') continue;
+		config['x8[' + j + ']'] = parseInt(document.getElementById('digit' + i).value);
+	}
+	
+	//
+	// read biprice
+	//
+	
+	validate(0, 1999, document.getElementById('bigprice.0'));
+	var bigprice = document.getElementById('bigprice.0').value;	
+	
+	switch(bigprice.length) {
+	
+		case 0:
+			config["8[2]"] = 0;
+			break;
+		case 1:
+			if (config.onetoleft && bigprice == '1') {
+				config["8[1]"] = 1;		
+				config["8[2]"] = 100;	
+			}
+			else {
+				config["8[2]"] = parseInt(bigprice.charAt(0));			
+			}
+			break;
+		case 2:
+			config["8[2]"] = parseInt(bigprice.charAt(1));
+			config["8[1]"] = parseInt(bigprice.charAt(0));
+			break;	
+		case 3:
+			config["8[2]"] = parseInt(bigprice.charAt(2));
+			config["8[1]"] = parseInt(bigprice.charAt(1));
+			config["8[0]"] = parseInt(bigprice.charAt(0));
+			break;	
+		case 4:
+			config["8[2]"] = parseInt(bigprice.charAt(3));
+			config["8[1]"] = parseInt(bigprice.charAt(2));
+			config["8[0]"] = parseInt(bigprice.charAt(1));
+			config["1"] = true;
+			break;
+	}
+	
+	//validate(0, 99, document.getElementById('bigprice.1'));
+	bigprice = document.getElementById('bigprice.1').value;	
+	
+	switch(bigprice.length) {
+		case 0:
+			config[".8[1]"] = 0;
+			config[".8[0]"] = 0;
+			break;
+		case 1:
+			config[".8[1]"] = parseInt(bigprice.charAt(0));
+			config[".8[0]"] = 0;			
+			break;
+		case 2:
+			config[".8[1]"] = parseInt(bigprice.charAt(1));
+			config[".8[0]"] = parseInt(bigprice.charAt(0));
+			break;
+	}
+	
+	//
+	// read smallprice
+	//
+	
+	//validate(0, 1999, document.getElementById('smallprice.0'));	
+	var smallprice = document.getElementById('smallprice.0').value;	
+	
+	switch(smallprice.length) {
+		case 0:
+			config["-8[2]"] = 0;
+			break;
+		case 1:
+			config["-8[2]"] = parseInt(smallprice.charAt(0));			
+			break;
+		case 2:
+			config["-8[2]"] = parseInt(smallprice.charAt(1));
+			config["-8[1]"] = parseInt(smallprice.charAt(0));
+			break;	
+		case 3:
+			config["-8[2]"] = parseInt(smallprice.charAt(2));
+			config["-8[1]"] = parseInt(smallprice.charAt(1));
+			config["-8[0]"] = parseInt(smallprice.charAt(0));
+			break;	
+		case 4:
+			config["-8[2]"] = parseInt(smallprice.charAt(3));
+			config["-8[1]"] = parseInt(smallprice.charAt(2));
+			config["-8[0]"] = parseInt(smallprice.charAt(1));
+			config["-1"] = true;
+			break;
+	}
+	
+	//validate(0, 99, document.getElementById('smallprice.1'));
+	smallprice = document.getElementById('smallprice.1').value;	
+	
+	switch(smallprice.length) {
+		case 0:
+			config["-.8[1]"] = 0;
+			config["-.8[0]"] = 0;
+			break;
+		case 1:
+			config["-.8[1]"] = parseInt(smallprice.charAt(0));
+			config["-.8[0]"] = 0;			
+			break;
+		case 2:
+			config["-.8[1]"] = parseInt(smallprice.charAt(1));
+			config["-.8[0]"] = parseInt(smallprice.charAt(0));
+			break;
+	}
+
+	return config;
+	
+}
+
+function lineactivate(digit, linecount)
+{
+	//HOW TO READ matrix: 
+	//digit SVG lines activation:
+	//  u = up     r = right
+	//  d = down   l = left
+	//  m = middle
+	//
+	//e.g.: dm == down middle
+	var m = [
+	     // ul  dl  dm  um  mm  ur  dr //
+		 [   1,  1,  1,  1,  0,  1,  1 ], // 0
+		 [   0,  0,  0,  0,  0,  1,  1 ], // 1
+		 [   0,  1,  1,  1,  1,  1,  0 ], // 2
+		 [   0,  0,  1,  1,  1,  1,  1 ], // 3
+		 [   1,  0,  0,  0,  1,  1,  1 ], // 4
+		 [   1,  0,  1,  1,  1,  0,  1 ], // 5
+		 [   1,  1,  1,  1,  1,  0,  1 ], // 6
+		 [   0,  0,  0,  1,  0,  1,  1 ], // 7
+		 [   1,  1,  1,  1,  1,  1,  1 ], // 8
+		 [   1,  0,  1,  1,  1,  1,  1 ]  // 9
+	];
+	
+	return (m[digit] ? m[digit][linecount] == 1 : 0); 
+	
+}
+
+function render(config) {
+
+	var tag = null;
+	var status = 0;
+	var parsedData = '';	
+	var lines = data.ESL70.split('\n');	
+	var linecount = 0;
+	
+	if (!config['8[2]']) config['8[2]'] = 0;			
+	if (!config['.8[1]']) config['.8[1]'] = 0;		
+	if (!config['.8[0]']) config['.8[0]'] = 0;	
+		
+	if (!config['-8[2]']) config['-8[2]'] = 0;			
+	if (!config['-.8[1]']) config['-.8[1]'] = 0;		
+	if (!config['-.8[0]']) config['-.8[0]'] = 0;
+	
+	for (var i = 0; i < lines.length; i ++) {
+		var valid = false;
+		var line = lines[i].replace('\r', ' ').replace('\t', ' ').trim();
+		switch (status) {
+			case 0: 
+				if (line.indexOf('<!--') >= 0 && line.indexOf('{{') > 0) {
+					n = line.indexOf('{{');
+					n += 2;
+					m = line.indexOf('-->');
+					tag = line.substr(n, m - n).trim().toLowerCase();					
+					status ++;
+					linecount = 0;
+				}
+				else {
+					valid = true;
+				}
+				break;
+			case 1: 				
+				if (line.indexOf('<!--') >= 0 && line.indexOf('}}') > 0) {
+					tag = null;
+					status = 0;
+				}
+				else {				
+					if (config[tag] >= 0) {
+						if (typeof config[tag] == "number") {													
+							valid = lineactivate(config[tag], linecount)
+							linecount ++;
+						}
+						else {
+							valid = true;
+						}
+					}
+				}			
+				break;
+		}
+		if (valid) parsedData += line + '\n';
+	}
+	
+	document.getElementById('display').innerHTML = parsedData;
+
+}
+
+function reload()
+{
+	try {
+		var cfg = readconfig();	
+		render(cfg);
+	}
+	catch (e) {
+		print('reload error - ' + e);
+	}	
+	return false;	
+}
+
+//
+// funzioni di controllo
+//
+
+function init(url)
+{
+	var xhttp = null;		
+	
+	try {	
+		if (window.navigator.userAgent.indexOf("MSIE ") < 0 
+				&& window.navigator.userAgent.indexOf('.NET') < 0) {
+			xhttp = new XMLHttpRequest();	  
+		}
+		else {
+			xhttp = new ActiveXObject("Microsoft.XMLHTTP");
+		}
+		xhttp.open("GET", url, false);		
+		xhttp.send("");
+		data.ESL70 = xhttp.responseText;				
+	}	
+	catch (e) {		
+		print(e);				
+	}	
+	
+	fillcombo(0, 99, 'discount');
+	fillcombo(0, 9, 'digit1');
+	fillcombo(0, 9, 'digit2');
+	fillcombo(0, 9, 'digit3');
+	fillcombo(0, 9, 'digit4');
+	fillcombo(0, 9, 'digit5');
+
+}
+
+function fillcombo(from, to, target)
+{
+	var sel = document.getElementById(target);		
+	for (var i = from; i <= to; i ++) {
+		var option = document.createElement("option");
+		option.text = i;
+		option.value = i;
+		sel.add(option);
+	}				
+}
+
+function print(m)
+{
+	var pre = document.getElementById('debug');	
+	var html = new Date();
+	html += ' &gt; ';
+	html += m;	
+	html += '<br>';
+	pre.innerHTML = html + pre.innerHTML;	
+}
+
+function isvalidkey(evt, max, o)
+{
+	var charCode = (evt.which) ? evt.which : event.keyCode
+	if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+		return false;
+	}
+	// now invalidate digit if max number of 'o' field is specified
+	if (max && o && o.value && o.value.length > 0) {
+		var n = o.selectionStart;
+		var l = o.selectionEnd;	
+		if (l - n > 1) return true;		
+		var t = o.value;
+		var c = String.fromCharCode(evt.charCode);
+		if (n == 0) {
+			t = c + t;
+		}
+		else if (n == t.length - 1) {
+			t += c;
+		}
+		else {
+			var m = t.length;
+			t = t.substr(0, n) + c + t.substr(n, m - n);
+		}		
+		if (parseInt(t) > max) return false;
+	}
+	// everithing ok
+	return true;
+}
+
+
+function validate(min, max, o)
+{
+	try {		
+		while (o.value.length > 1 && o.value.indexOf('0') == 0) {
+			o.value = o.value.substr(1);
+		}
+		if (o.value.length > 0) {
+			var n = parseInt(o.value);
+			if (n > max) o.value = max;
+			if (n < min) o.value = min;
+		}	
+		//else {
+		//	o.value = min;
+		//}		
+	}
+	catch (e) {		
+		o.value = min;
+	}	
+}
+
+//-->
+</script>
+
+<style>
+
+.ESL70 {
+	margin-left: -420px; 
+	margin-top: -235px;	
+}
+
+.ESL70BOX {
+	-webkit-border-radius: 15px;
+	-moz-border-radius: 15px;
+	border-radius: 15px;	
+	border: 5px solid #808080;
+	background: #ededed; 	
+	width: 380px;
+	height: 130px;		
+}
+
+BODY {
+	font-family: Verdana, Arial;
+	font-size: 12px;
+}
+
+LABEL {
+	 cursor: default; 
+	 font-family: Lucida Console, Lucida Grande, Courier New, Courier; 
+	 font-size: 10px;
+}
+
+TABLE {	
+	font-size: 12px;
+}
+
+INPUT {	
+	font-size: 12px;
+}
+
+SELECT {	
+	font-size: 12px;
+}
+
+TR {
+	vertical-align: top;	
+}
+
+.bolded {
+	font-family: Verdana, Arial;
+	font-size: 12px;
+	font-weight: bolder;
+}
+
+</style>
+
+</head>
+
+<body onload="init('ESL70.svg');">
+
+<h1 style="background: #808080; color: #ffffff;">ANTEPRIMA ESL70</h1>
+
+<table border="0">
+	<tr>
+		<td>
+			<div class="ESL70BOX">
+				<div class="ESL70" id="display">
+				</div>
+			</div>			
+		</td>
+		<td rowspan="2">
+			<table>
+				<tr>
+					<td>ESL Mac</td>
+					<td>
+						<input type="text" autocomplete="off" id="mac" value="00124B000374CC19" maxlength="16" size="16"
+							style="width: 140px; font-family: Courier New, Courier; font-size: 12px; color: #808080; border: 0px;"></input>
+					</td>
+				</tr>				
+				<tr>
+					<td>Hash code</td>
+					<td>
+						<input type="text" autocomplete="off" id="hash" value="0" maxlength="19" size="19"
+							style="width: 140px; font-family: Courier New, Courier; font-size: 12px; color: #808080; border: 0px;"></input>	
+					</td>
+				</tr>
+				<tr>
+					<td>Number of pages</td>
+					<td>
+						<select id="pages">
+							<option value="1">Single page</option>
+							<option value="2">2 pages</option>
+							<option value="3">3 pages</option>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td>One-to-left</td>
+					<td>
+						<input type="checkbox" id="onetoleft" checked="false" onclick="reload()">
+					</td>
+				</tr>
+				<tr>
+					<td>Activation</td>
+					<td>
+						<input type="text" autocomplete="off" id="activation" value="YYYY-MM-DDThh:mm:ss" maxlength="19" size="19"
+							style="width: 140px; font-family: Courier New, Courier; font-size: 12px; color: #808080; border: 0px;"></input>		
+						<select onchange="setActivationTime()" id="activationSel">
+							<option value="*">--- select ---</option>
+							<option value="0">now</option>
+							<option value="60">in 1 min</option>
+							<option value="180">in 3 min</option>							
+							<option value="">Time Zero</option>
+						</select>
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+
+	<tr>
+	<td>
+	
+<style>
+TD.tabon {
+	color: #000000;
+	cursor: pointer;
+	width: 80px;	
+	height: 30px;
+	font-weight: bolder;
+	text-align: center;	
+	background: #ededed;
+	border-bottom: 0px;
+	border-left: 5px solid #808080;
+	border-right: 5px solid #808080;
+	border-top: 5px solid #808080;	
+	-moz-border-radius-topright: 10px; 
+	border-top-right-radius: 10px; 	
+}
+TD.taboff {
+	color: #ffffff;
+	cursor: pointer;
+	width: 80px;	
+	height: 30px;
+	font-weight: bolder;
+	text-align: center;
+	background: #adadad;
+	border-bottom: 5px solid #808080;
+	border-left: 5px solid #808080;
+	border-right: 5px solid #808080;
+	border-top: 5px solid #808080;	
+	-moz-border-radius-topright: 10px; 
+	border-top-right-radius: 10px; 	
+}
+TD.tabno {
+	border-bottom: 5px solid #808080;
+}
+.underbox {
+	border-bottom: 5px solid #808080;
+	border-left: 5px solid #808080;
+	border-right: 5px solid #808080;
+	border-top: 0px;
+	background: #ededed; 	
+	width: 500px;	
+}
+</style>
+
+<script>
+
+function switchpage(num) {
+	document.getElementById('page1').style.display = (num == 1 ? 'block' : 'none');
+	//document.getElementById('page2').style.display = (num == 2 ? 'block' : 'none');
+	//document.getElementById('page3').style.display = (num == 3 ? 'block' : 'none');	
+	document.getElementById('tab1').className = (num == 1 ? 'tabon' : 'taboff');
+	document.getElementById('tab2').className = (num == 2 ? 'tabon' : 'taboff');
+	document.getElementById('tab3').className = (num == 3 ? 'tabon' : 'taboff');
+}
+
+function formatDate(date) {
+	var y = date.getFullYear();			
+	var m = date.getMonth();
+	m ++;
+	if (m < 10) m = '0' + m;	
+	var d = date.getDate();
+	if (d < 10) d = '0' + d;	
+	var hh = date.getHours();
+	if (hh < 10) hh = '0' + hh;	
+	var mm = date.getMinutes();
+	if (mm < 10) mm = '0' + mm;	
+	var ss = date.getSeconds();
+	if (ss < 10) ss = '0' + ss;	
+	return y + '-' + m + '-' + d + 'T' + hh + ':' + mm + ':' + ss;	
+}
+
+function setActivationTime(o)
+{
+	var o = document.getElementById('activationSel').value;
+	if (o == "*") return;
+	if (o == "") {
+		document.getElementById('activation').value = "2000-01-01T00:00:00";
+		return;
+	}
+	var n = -1;
+	try {
+		n = parseInt(o);
+	}
+	catch(e) {}	
+	var d = new Date();		
+	d.setSeconds(d.getSeconds() + n);
+	document.getElementById('activation').value = formatDate(d);	
+}
+
+</script>
+
+<input type="button" value="DECODE" onclick="decode()"></input>
+<input type="button" value="ENCODE" onclick="encode()"></input>
+<input type="button" value="PUBLISH" onclick="publish()"></input>
+<br>
+<textarea id="b64data" style="width: 500px; height: 40px; border: 1px blue solid; font-family: Lucida Console, Courier New, Courier; font-size: 10px; color: darkBlue;">
+AQbgaboZEDCOAAAAKwMAAP///w+QAACQ
+</textarea>
+<br>
+&#8657;<i style="font-size: 10px;">BASE64 PAYLOAD</i>&#8657;
+<br>
+<br>
+
+<table border="0" cellspacing="0" cellpadding="0">
+
+<tr>
+	<td id="tab1" class="tabon" onclick="switchpage(1)">Page 1</td>
+	<td id="tab2" class="taboff" onclick="switchpage(2)">Page 2</td>
+	<td id="tab3" class="taboff" onclick="switchpage(3)">Page 3</td>
+	<td class="tabno">&nbsp;</td>
+</tr>
+
+<tr>
+<td colspan="4">
+
+<!-- PAGE 1 -->
+
+<table cellpadding="5" cellspacing="0" border="0" id="page1" class="underbox">
+	<tr>
+		<td>Prezzo</td>				
+		<td>
+			<input id="bigprice.0" type="text" autocomplete="off" maxlength="4" size="4" style="text-align: right;" 
+				onkeypress="return isvalidkey(event, 1999, this)" 
+				onkeyup="reload()">
+			<span style="margin-top: 18px;">,</span>
+			<input id="bigprice.1" type="text" autocomplete="off" maxlength="2" size="2" style="text-align: right;" 
+				onkeypress="return isvalidkey(event)" 
+				onkeyup="reload()">
+			<label><span class="bolded">&euro;</span><input type="checkbox" id="euro"  onclick="reload()"></label>
+		</td>		
+		<td rowspan="3">			
+			<table cellpadding="0" cellspacing="0" border="0">				
+				<tr>
+					<td colspan="4">
+						Unita' di misura
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<label>
+							<input type="checkbox" id="kg" onclick="reload()">KG
+						</label>
+					</td>					
+					<td>
+						<label>
+							<input type="checkbox" id="lt" onclick="reload()">LT
+						</label>
+					</td>					
+					<td>
+						<label>
+							<input type="checkbox" id="mt" onclick="reload()">MT
+						</label>
+					</td>					
+					<td>
+						<label>
+							<input type="checkbox" id="pz" onclick="reload()">PZ
+						</label>
+					</td>					
+				</tr>
+				<tr>
+					<td colspan="4">
+						&nbsp;
+					</td>
+				</tr>
+				<tr>
+					<td colspan="4">
+						Lettere
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<label>
+							<input type="checkbox" id="a" onclick="reload()">A		
+						</label>
+					</td>
+					<td>
+						<label>
+							<input type="checkbox" id="b" onclick="reload()">B
+						</label>
+					</td>					
+					<td>
+						<label>
+							<input type="checkbox" id="c" onclick="reload()">C
+						</label>
+					</td>					
+					<td>
+						<label>
+							<input type="checkbox" id="d" onclick="reload()">D
+						</label>
+					</td>					
+				</tr>
+			</table>
+		</td> 
+	</tr>	
+	<tr>
+		<td>Prezzo Unitario</td>				
+		<td>
+			<input id="smallprice.0" type="text" autocomplete="off" maxlength="4" size="4" style="text-align: right;"
+				onkeypress="return isvalidkey(event, 1999, this)" 
+				onkeyup="reload()">
+			<span style="margin-top: 18px;">,</span>
+			<input id="smallprice.1" type="text" autocomplete="off" maxlength="2" size="2" style="text-align: right;"
+				onkeypress="return isvalidkey(event)" 
+				onkeyup="reload()">
+			<label><span class="bolded">&euro;</span><input type="checkbox" id="smalleuro" onclick="reload()"></label>
+		</td>
+		<td></td>		
+	</tr>	
+	<tr>
+		<td>Sconto</td>				
+		<td>
+			<select maxlength="5" id="discount" onchange="reload()">
+				<option value="255">NO</value>								
+			</select>
+			<label><span class="bolded">%</span><input type="checkbox" id="percent" onclick="reload()"></label>
+		</td>
+		<td></td>		
+	</tr>	
+	<tr>
+		<td>
+			Icone
+		</td>
+		<td colspan="3">
+			<table cellspacing="0" cellpadding="5" border="0">
+				<tr valign="middle">
+					<td>
+						<label>
+							<input type="checkbox" id="moon" onclick="reload()">								
+							<svg style="height: 16px; width: 16px;">
+								<path d="M456.667,338.941c-3.134,0-5.675-2.541-5.675-5.674c0-1.775,0.817-3.359,2.091-4.4h-0.031c-3.164,0-5.73,2.564-5.73,5.729
+									s2.566,5.729,5.73,5.729c1.428,0,2.73-0.525,3.733-1.389C456.745,338.936,456.707,338.941,456.667,338.941"
+										transform="translate(-446,-327)"/> />
+							</svg>
+						</label>
+					</td>
+					<td>						
+						<label>
+							<input type="checkbox" id="radio" onclick="reload()">	
+							<svg style="height: 16px; width: 16px;">
+								<g transform="translate(-485,-278)">
+									<path d="M490.541,286.963l0.586,0.584c0.972-0.969,2.55-0.969,3.519,0l0.588-0.584 C493.938,285.668,491.833,285.668,490.541,286.963"/>
+									<path d="M488.487,284.908l1.1,1.102c1.82-1.82,4.779-1.82,6.598,0l1.1-1.102C494.859,282.484,490.913,282.484,488.487,284.908""/>
+									<path d="M485.881,282.303l1.752,1.752c2.897-2.897,7.61-2.897,10.508,0l1.75-1.752C496.028,278.44,489.745,278.44,485.881,282.303"/>
+									<path d="M492.887,287.885c0.788,0,1.429,0.639,1.429,1.43c0,0.789-0.641,1.428-1.429,1.428c-0.789,0-1.429-0.639-1.429-1.428 C491.458,288.523,492.098,287.885,492.887,287.885"/>
+								</g>
+							</svg>
+						</label>						
+					</td>
+					<td>						
+						<label>
+							<input type="checkbox" id="star" onclick="reload()">		
+							<svg style="height: 16px; width: 16px;">
+								<polygon points="782.229,323.109 784.206,327.111 788.622,327.752 785.425,330.867 786.179,335.266 782.229,333.189 778.282,335.266 779.036,330.867 775.839,327.752 780.255,327.111"
+										transform="translate(-775,-322)"/>
+							</svg>
+						</label>
+					</td>
+					<td>	
+						<label>
+							<input type="checkbox" id="hand" onclick="reload()">		
+							<svg style="height: 16px; width: 16px;">
+								<path d="M456.187,270.272c-0.275-0.229-0.686-0.192-0.915,0.082l-1.821,1.351v-1.87v-4.914c0-0.357-0.291-0.648-0.65-0.648
+									c-0.358,0-0.649,0.291-0.649,0.648v4.086h-0.31v-5.197c0-0.359-0.291-0.649-0.649-0.649s-0.649,0.29-0.649,0.649v5.197h-0.31v-4.17
+									c0-0.359-0.291-0.65-0.649-0.65s-0.649,0.291-0.649,0.65v4.17h-0.31v-2.289c0-0.359-0.291-0.65-0.649-0.65s-0.649,0.291-0.649,0.65
+									c0,2.407,0.014,4.817-0.004,7.223c-0.013,1.697,1.975,1.523,3.258,1.523c1.121,0,2.49,0.086,3.192-0.863
+									c0.656-0.889,1.312-1.795,1.959-2.688c0.177-0.244,0.36-0.483,0.539-0.726C456.499,270.912,456.462,270.502,456.187,270.272"
+										transform="translate(-444,-262)"/>
+							</svg>
+						</label>
+					</td>
+					<td>		
+						<label>
+							<input type="checkbox" id="round" onclick="reload()">	
+							<svg style="height: 16px; width: 16px;">
+								<g transform="translate(-458,-326)">
+								<path d="M470.703,329.936l0.69-0.818c0.123-0.143,0.07-0.26-0.117-0.264l-3.619-0.047c-0.188-0.002-0.283,0.139-0.211,0.311
+									l1.363,3.301c0.072,0.174,0.205,0.182,0.293,0.016l0.539-0.971c0.793,0.77,1.285,1.846,1.285,3.039
+									c0,0.234-0.021,0.465-0.057,0.689l1.814,0.313c0.056-0.326,0.084-0.662,0.084-1.002
+									C472.769,332.682,471.97,331.049,470.703,329.936"
+										/>		
+								<path d="M460.713,333.24l-1.054-0.189c-0.184-0.037-0.26,0.068-0.168,0.232l1.767,3.158c0.093,0.164,0.261,0.178,0.376,0.027
+									l2.178-2.83c0.114-0.148,0.053-0.268-0.135-0.262l-1.109,0.018c0.271-1.07,0.957-2.033,1.99-2.629
+									c0.203-0.119,0.412-0.217,0.625-0.297l-0.637-1.729c-0.311,0.115-0.613,0.258-0.909,0.43
+									C462.062,330.078,461.046,331.586,460.713,333.24"
+										/>
+								<path d="M468.567,340.242l0.363,1.006c0.061,0.18,0.189,0.193,0.285,0.031l1.853-3.109c0.097-0.162,0.022-0.313-0.163-0.338
+									l-3.539-0.473c-0.188-0.025-0.258,0.086-0.16,0.246l0.57,0.953c-1.063,0.301-2.242,0.188-3.273-0.41
+									c-0.203-0.117-0.393-0.25-0.568-0.395l-1.18,1.416c0.254,0.211,0.531,0.402,0.826,0.574
+									C465.156,340.654,466.968,340.779,468.567,340.242"
+										/>							
+								</g>
+							</svg>
+						</label>						
+					</td>
+					<td>	
+						<label>
+							<input type="checkbox" id="battery" onclick="reload()">		
+							<svg style="height: 16px; width: 16px;">
+								<g transform="translate(-444,-276)">
+									<path d="M450.236,283.965l-2.506,1.953v3.785c0,0.4,0.291,0.727,0.649,0.727h4.744c0.357,0,0.648-0.326,0.648-0.727v-7.574
+										l-2.946,2.295L450.236,283.965z"/>		
+									<path d="M453.772,278.747c0-0.397-0.291-0.725-0.648-0.725h-0.92v-0.227c0-0.428-0.313-0.777-0.697-0.777h-1.512
+										c-0.382,0-0.695,0.35-0.695,0.777v0.227h-0.922c-0.356,0-0.647,0.327-0.647,0.725v1.72v4.48l2.506-1.953l0.591,0.46l2.945-2.298
+										v-0.689V278.747z"/>
+								</g>
+							</svg>
+						</label>
+					</td>
+				</tr>
+			</table>
+		</td>		
+	</tr>	
+	<tr>
+		<td valign="top">
+			Scritte
+		</td>
+		<td colspan="3">
+			<table cellspacing="0" cellpadding="5" border="0">
+				<tr valign="middle">
+					<td>	
+						<label>
+							<input type="checkbox" id="offerta" onclick="reload()">		
+							OFFERTA
+						</label>
+					</td>
+					<td>	
+						<label>
+							<input type="checkbox" id="punti" onclick="reload()">		
+							PUNTI
+						</label>
+					</td>
+					<td>	
+						<label>
+							<input type="checkbox" id="promo" onclick="reload()">		
+							PROMO
+						</label>
+					</td>
+					<td>	
+						<label>
+							<input type="checkbox" id="finoal" onclick="reload()">		
+							FINO AL
+						</label>
+					</td>
+					<td>	
+						<label>
+							<input type="checkbox" id="sconto" onclick="reload()">		
+							SCONTO
+						</label>
+					</td>
+				</tr>
+				<tr valign="middle">
+					<td>	
+						<label>
+							<input type="checkbox" id="prezzo" onclick="reload()">		
+							PREZZO
+						</label>
+					</td>
+					<td>	
+						<label>
+							<input type="checkbox" id="base" onclick="reload()">		
+							BASE
+						</label>
+					</td>
+					<td>	
+						<label>
+							<input type="checkbox" id="n" onclick="reload()">		
+							N
+						</label>
+					</td>
+					<td colspan="2">							
+						<!--
+						<label style="font-weight: bolder; background: black; color: white; padding-right: 4px; padding-top: 6px; padding-bottom: 2px;">								
+						-->
+						<label>								
+							<input type="checkbox" id="sottocosto" onclick="reload()">		
+							<span>SOTTOCOSTO</span>								
+						</label>						
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+	<tr>
+		<td>Digit</td>				
+		<td colspan="3">
+			<select maxlength="5" id="digit1" onchange="reload()">
+				<option value="15">NO</value>								
+			</select>			
+			<select maxlength="5" id="digit2" onchange="reload()">
+				<option value="15">NO</value>								
+			</select>						
+			<select maxlength="5" id="digit3" onchange="reload()">
+				<option value="15">NO</value>								
+			</select>			
+			<label><input type="checkbox" id="dot" onclick="reload()">.</label>
+			<label><input type="checkbox" id="x" onclick="reload()">x</label>
+			<select maxlength="5" id="digit4" onchange="reload()">
+				<option value="15">NO</value>
+			</select>
+			<select maxlength="5" id="digit5" onchange="reload()">
+				<option value="15">NO</value>								
+			</select>			
+		</td>		
+	</tr>
+</table>
+
+
+</td>
+</tr>
+</table>
+
+</td>
+</tr>
+</table>
+
+<script>
+
+function readHeader(data, offset)
+{
+	var i = 0;
+	var x;
+	var b;
+	
+	//read big price
+	i += offset;
+	
+	b = data.charCodeAt(i);	
+	x = b;
+	
+	i ++;
+	b = data.charCodeAt(i);	
+	x += (b * Math.pow(2, 8));
+	
+	i ++;
+	b = data.charCodeAt(i);	
+	x += (b * Math.pow(2, 16));
+	
+	i ++;
+	b = data.charCodeAt(i);	
+	x += (b * Math.pow(2, 24));
+		
+	x += 946684800;
+	x *= 1000;
+	
+	var d = new Date(x);
+	
+	var _y = 1900 + d.getYear();
+	var _m = 1 + d.getMonth();
+	var _d = 1 + d.getDay();
+	var _h = d.getHours();
+	var _n = d.getMinutes();
+	var _s = d.getSeconds();
+	
+	document.getElementById('activation').value = 
+			_y + '-' +
+			(_m < 10 ? '0' + _m : _m) + '-' +
+			(_d < 10 ? '0' + _d : _d) + 'T' +
+			(_h < 10 ? '0' + _h : _h) + ':' +
+			(_n < 10 ? '0' + _n : _n) + ':' +
+			(_s < 10 ? '0' + _s : _s);
+	
+	i ++;
+	b = data.charCodeAt(i);	
+	
+	var npages = (b & 0xf0); 
+	npages /= 16;
+	document.getElementById('pages').value = npages;
+	
+	b &= 0x0f;
+	document.getElementById('onetoleft').checked = (b & 1 == 1);
+	
+}
+
+function readDisplayPage(data, offset)
+{
+	var i = 0;
+	var x, b;
+	
+	//read big price
+	i += offset;
+	
+	b = data.charCodeAt(i);
+	x = b;
+	
+	i ++;
+	b = data.charCodeAt(i);	
+	x += (b * Math.pow(2, 8));
+	
+	i ++;
+	b = data.charCodeAt(i);	
+	x += (b * Math.pow(2, 16));
+	
+	i ++;
+	b = data.charCodeAt(i);	
+	x += (b * Math.pow(2, 24));
+	
+	document.getElementById('bigprice.0').value = Math.floor(x / 100);
+	document.getElementById('bigprice.1').value = x % 100;
+	
+	//read small price		
+	i ++;
+	b = data.charCodeAt(i);
+	x = b;
+	
+	i ++;
+	b = data.charCodeAt(i);	
+	x += (b * Math.pow(2, 8));
+	
+	i ++;
+	b = data.charCodeAt(i);	
+	x += (b * Math.pow(2, 16));
+	
+	i ++;
+	b = data.charCodeAt(i);	
+	x += (b * Math.pow(2, 24));
+	
+	document.getElementById('smallprice.0').value = Math.floor(x / 100);
+	document.getElementById('smallprice.1').value = x % 100;
+	
+	//read discount
+	i++;
+	b = data.charCodeAt(i);
+	document.getElementById('discount').value = b;
+	
+	//read hex digit 1,2
+	i++;
+	b = data.charCodeAt(i);
+	var hd1 = ((b & 0xf0) / 16);
+	var hd2 = (b & 0x0f);
+	//read hex digit 3,4.	
+	i++;	
+	b = data.charCodeAt(i);
+	var hd3 = (b & 0x0f);
+	var hd4 = ((b & 0xf0) / 16);
+	//read hex digit 5	
+	i++;	
+	b = data.charCodeAt(i);
+	var hd5 = (b & 0x0f);
+	
+	document.getElementById('digit1').value = hd1;
+	document.getElementById('digit2').value = hd2;
+	document.getElementById('digit4').value = hd3;
+	document.getElementById('digit3').value = hd4;
+	document.getElementById('digit5').value = hd5;
+		
+	// read icons 1 / 4	
+	i++;	
+	b = data.charCodeAt(i);
+	document.getElementById('euro').checked = 		((b & 128) > 0);
+	document.getElementById('n').checked = 			((b & 64) > 0);
+	document.getElementById('star').checked = 		((b & 32) > 0);
+	document.getElementById('pz').checked = 		((b & 16) > 0);
+	document.getElementById('sconto').checked = 	((b & 8) > 0);
+	document.getElementById('offerta').checked = 	((b & 4) > 0);
+	document.getElementById('punti').checked = 		((b & 2) > 0);
+	document.getElementById('hand').checked = 		((b & 1) > 0);
+	
+	// read icons 2 / 4
+	i++;	
+	b = data.charCodeAt(i);
+	document.getElementById('battery').checked =    ((b & 128) > 0);
+	document.getElementById('percent').checked =    ((b & 64) > 0);
+	document.getElementById('radio').checked = 		((b & 32) > 0);
+	document.getElementById('promo').checked = 		((b & 16) > 0);
+	document.getElementById('finoal').checked = 	((b & 8) > 0);
+	document.getElementById('x').checked = 			((b & 4) > 0);
+	document.getElementById('dot').checked = 		((b & 2) > 0);
+	document.getElementById('sottocosto').checked = ((b & 1) > 0);
+	        
+	// read icons 3 / 4
+	i++;
+	b = data.charCodeAt(i);       
+	document.getElementById('prezzo').checked = 	((b & 128) > 0);
+	document.getElementById('base').checked =       ((b & 64) > 0);
+	document.getElementById('moon').checked =       ((b & 32) > 0);
+	document.getElementById('round').checked =      ((b & 16) > 0);
+	document.getElementById('a').checked =          ((b & 8) > 0);
+	document.getElementById('b').checked =          ((b & 4) > 0);
+	document.getElementById('c').checked =          ((b & 2) > 0);
+	document.getElementById('d').checked =          ((b & 1) > 0);
+  
+	// read icons 4 / 4
+	i++;
+	b = data.charCodeAt(i);       
+	document.getElementById('smalleuro').checked = 	((b & 128) > 0);
+	document.getElementById('lt').checked = 		((b & 64) > 0);
+	document.getElementById('mt').checked = 		((b & 32) > 0);
+	document.getElementById('kg').checked = 		((b & 16) > 0);
+	
+}
+
+function publish_done(o) {
+	print('price update OK - result : ' + o);
+}
+
+function getB64() {
+	var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/+";
+	var s = document.getElementById('b64data').value.trim();
+	var ss = '';
+	for (var i = 0; i  < s.length; i ++) {		
+		if (b64.indexOf(s.charAt(i)) >= 0) { ss += s.charAt(i); }
+	}
+	return ss;
+}
+
+function decode(){
+	try {
+		var b64 = getB64();
+		var b = atob(b64);
+		
+		//build activation time
+		readHeader(b, 2);
+		
+		//build page 1		
+		readDisplayPage(b, 8);	
+		
+		//reload display visualization
+		reload();
+		
+		return true;
+	}
+	catch (e) {
+		print('decode error: ' + e);
+		return false;
+	}
+}
+
+
+function encode(){
+
+	try {
+	
+		var b = new Array(24);
+		
+		// proto - always 1
+		b[0] = 1;
+		
+		// esl type
+		b[1] = 6;
+
+		// activation time	
+		var sd = document.getElementById('activation').value;
+		var _y = parseInt(sd.substr(0, 4));
+		var _m = parseInt(sd.substr(5, 2));
+		_m --;
+		var _d = parseInt(sd.substr(8, 2));
+		var _h = parseInt(sd.substr(11, 2));
+		var _n = parseInt(sd.substr(14, 2));
+		var _s = parseInt(sd.substr(17, 2));
+		
+		var d = new Date(_y, _m, _d, _h, _n, _s, 0); 		
+		
+		var ld = d.getTime();
+		ld /= 1000;
+		ld -= 946684800;
+		
+		b[2] = ld & 0xff;		
+		ld >>= 8;
+		b[3] = ld & 0xff;
+		ld >>= 8;
+		b[4] = ld & 0xff;
+		ld >>= 8;
+		b[5] = ld & 0xff;
+		
+		// number of pages		
+		var npages = parseInt(document.getElementById('pages').value)
+		npages *= 16;
+		b[6] = npages;
+		
+		// one to left
+		b[6] += (document.getElementById('onetoleft').checked ? 1 : 0);
+			
+		//
+		// page 1
+		//
+		
+		var i = 0;
+		for (i = 7; i < 24; i++) {
+			b[i] = 0;
+		}
+		
+		i = 8;
+		
+		// big price		
+		var bp = parseInt(document.getElementById('bigprice.0').value);
+		bp *= 100;
+		bp += parseInt(document.getElementById('bigprice.1').value);
+
+		b[i ++] = bp & 0xff;		
+		bp >>= 8;
+		b[i ++] = bp & 0xff;
+		bp >>= 8;
+		b[i ++] = bp & 0xff;
+		bp >>= 8;
+		b[i ++] = bp & 0xff;
+		
+		// small price		
+		var sp = parseInt(document.getElementById('smallprice.0').value);
+		sp *= 100;
+		sp += parseInt(document.getElementById('smallprice.1').value);		
+				
+		b[i ++] = sp & 0xff;		
+		sp >>= 8;
+		b[i ++] = sp & 0xff;
+		sp >>= 8;
+		b[i ++] = sp & 0xff;
+		sp >>= 8;
+		b[i ++] = sp & 0xff;
+		
+		//read discount		
+		b[i] = parseInt(document.getElementById('discount').value);
+		
+		//read hex digit 1-5
+		i ++;
+		var d1 = parseInt(document.getElementById('digit1').value);
+		
+		var d2 = parseInt(document.getElementById('digit2').value);
+		b[i] = d1 * 16;
+		b[i] += d2;		
+		i ++;
+		var d3 = parseInt(document.getElementById('digit3').value);
+		var d4 = parseInt(document.getElementById('digit4').value);
+		b[i] = d3 * 16;
+		b[i] += d4;		
+		i ++;
+		var d5 = parseInt(document.getElementById('digit5').value);
+		b[i] = d5;
+		
+		// icons
+		
+		i ++;			
+		b[i] += (document.getElementById('euro').checked ? 128 : 0);
+		b[i] += (document.getElementById('n').checked ? 64 : 0);
+		b[i] += (document.getElementById('star').checked ? 32 : 0);
+		b[i] += (document.getElementById('pz').checked ? 16 : 0);
+		b[i] += (document.getElementById('sconto').checked ? 8 : 0);
+		b[i] += (document.getElementById('offerta').checked ? 4 : 0);
+		b[i] += (document.getElementById('punti').checked ? 2 : 0);
+		b[i] += (document.getElementById('hand').checked ? 1 : 0);
+		
+		i++;			
+		b[i] += (document.getElementById('battery').checked ? 128 : 0);
+		b[i] += (document.getElementById('percent').checked ? 64 : 0);
+		b[i] += (document.getElementById('radio').checked ? 32 : 0);
+		b[i] += (document.getElementById('promo').checked ? 16 : 0);
+		b[i] += (document.getElementById('finoal').checked ? 8 : 0);
+		b[i] += (document.getElementById('x').checked ? 4 : 0);
+		b[i] += (document.getElementById('dot').checked ? 2 : 0);
+		b[i] += (document.getElementById('sottocosto').checked ? 1 : 0);
+				
+		i++;		
+		b[i] += (document.getElementById('prezzo').checked ? 128 : 0);
+		b[i] += (document.getElementById('base').checked ? 64 : 0);
+		b[i] += (document.getElementById('moon').checked ? 32 : 0);
+		b[i] += (document.getElementById('round').checked ? 16 : 0);
+		b[i] += (document.getElementById('a').checked ? 8 : 0);
+		b[i] += (document.getElementById('b').checked ? 4 : 0);
+		b[i] += (document.getElementById('c').checked ? 2 : 0);
+		b[i] += (document.getElementById('d').checked ? 1 : 0);
+	  
+		i++;		
+		b[i] += (document.getElementById('smalleuro').checked ? 128 : 0);
+		b[i] += (document.getElementById('lt').checked ? 64 : 0);
+		b[i] += (document.getElementById('mt').checked ? 32 : 0);
+		b[i] += (document.getElementById('kg').checked ? 16 : 0);
+		
+		
+		// save base64 data in textbox		
+		var data = '';		
+		for (var i = 0; i < 24; i++) {			
+			data += String.fromCharCode(b[i]);
+		}		
+		document.getElementById('b64data').value = btoa(data);
+		
+		return true;
+	}
+	catch (e) {
+		print('encode error: ' + e);
+		return false;
+	}
+}
+
+function publish(){	
+	try {
+		var mac = document.getElementById('mac').value;
+		var activation = document.getElementById('activation').value.trim();
+		if (activation == null || activation.length == 0) activation = '2000-01-01T00:00:00';		
+		var hash = document.getElementById('hash').value.trim();
+		if (hash == null || hash.length == 0) hash = 0;
+		sendPriceUpdate(mac, 1, activation, hash, getB64(), publish_done);
+		return true;
+	}
+	catch (e) {
+		print('publish error: ' + e);
+		return false;
+	}	
+}
+
+</script>
+
+<br>
+<pre id="debug" style="color: red;">
+</pre>
+
+</body>
+</html>

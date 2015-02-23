@@ -1,0 +1,149 @@
+<html>
+<head>
+<link type="text/css" rel="stylesheet" href="css/default.css"/>
+<script type="text/javascript" src="js/tbupdater.js"></script>
+<script type="text/javascript">
+
+function loadJSon(url, data)
+{	
+	if (window.XMLHttpRequest)
+	{
+	  xhttp=new XMLHttpRequest();
+	}
+	else
+	{
+	  xhttp=new ActiveXObject("Microsoft.XMLHTTP");
+	}	
+	xhttp.open("POST", url, false);
+	xhttp.setRequestHeader('Content-type','text/json');
+	xhttp.send(data);
+	
+	return eval('( ' + xhttp.responseText + ' )');
+}
+
+function postRendering()
+{
+	var i, j;
+	var o = document.getElementById('displaydata');
+	
+	if (o == null) return;
+	if (o.children == null) return;
+	if (o.children[0] == null) return;
+	if (o.children[0].children == null) return;
+	if (o.children[0].children[0] == null) return;
+	if (o.children[0].children[0].children == null) return;
+	
+	var tb = o.children[0].children[0];	
+	var n = tb.children.length;
+
+	for (i = 0; i < n; i ++)
+	{
+		if (i < 1) continue;
+		
+		tr = tb.children[i];	
+		
+		if (i == n - 1) break;
+		
+		var cc = tr.children[4].innerHTML;
+		var ac = tr.children[3].innerHTML.split(",");
+			
+		if (cc.indexOf('ffline') > 0) {
+			for (var j = 0; j < tr.children.length; j++) {
+				if (i % 2 == 0) tr.children[j].style.background = '#eebbbb';
+				else tr.children[j].style.background = '#eecccc';
+			}							
+		}
+		else {
+			var nodes = tr.children[5].getElementsByTagName('input');
+			for (var k = 0; k < nodes.length; k++) {
+				var node = nodes[k];
+				if (node.value == cc) {
+					node.checked = true;
+					//node.disabled = true;
+				}
+				else {
+					for (var j = 0; j < ac.length; j ++) {
+						if (ac[j] == node.value) node.checked = true;
+					}
+				}			     
+			}
+		}		
+	}
+
+}
+
+function setchannels(el)
+{
+	if (!confirm("Attenzione: si sta per cambiare l'elenco dei canali consentiti\r\nsu questo accentratore, cio' puo' comportare una rejoin\r\nmassiva di ESLs sui coordinator\r\nProcedere comunque?")) return
+	var channels = '';
+	var o = el; //window.event.target;
+	var row = o.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement;
+	var mac = row.children[1].innerHTML;
+	var nodes = row.getElementsByTagName('input');
+	for (var k = 0; k < nodes.length; k++) {
+		var node = nodes[k];
+		if (node.type == 'checkbox') 
+		{
+			if (node.checked) {
+				if (channels.length > 0) channels += ',';
+				channels += node.value;
+			}
+			node.disabled = true;
+		}				
+	}		
+	url = '../network/setchannels';
+	url += '?mac=' + mac;
+	url += '&allowedchannels=' + channels;
+	
+	loadJSon(url, null);
+	
+	o.parentElement.innerHTML = "<b class=descriptor>canali reimpostati</b>"
+	o.disabled = true;
+	
+}
+
+function settime(el)
+{
+	var o = el;//window.event.target;
+	var row = o.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement;
+	var mac = row.children[1].innerHTML;	
+	
+	url = '../network/settime';
+	url += '?mac=' + mac;
+	
+	loadJSon(url, null);
+	
+	o.parentElement.innerHTML = "<b class=descriptor>set time inviato!</b>"
+	o.disabled = true;
+	
+}
+
+function retryPriceUpdate(el)
+{
+	if (!confirm('Attenzione: si sta per avviare un resubmit globale del price\r\nupdate non terminato su questo accentratore.\r\nQuesta operazione potrebbe rallentarne altre, procedere comunque?')) return
+	
+	var o = el;//window.event.target;
+	var row = o.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement;
+	var mac = row.children[1].innerHTML;	
+	
+	url = '../network/retryupdate';
+	url += '?mac=' + mac;
+	
+	var b = loadJSon(url, null);
+	var v = b.updated;
+	
+	if (v == 'null') v = "0";
+	
+	o.parentElement.innerHTML = "<b class=descriptor>reinviati " + v + " price updates</b>";
+	o.disabled = true;
+	
+}
+
+</script>
+</head>
+<body style="margin-top: 0px;" 
+	onload="tbUpdate('../network/coordinators?dateformat=yyyy-MM-dd_HH:mm:ss&channelslist=true', 'xsl/channels.xsl', 'Nessun Accentratore rilevato!', postRendering)">
+	<div id="displaydata"></div>
+</body>
+</html>
+
